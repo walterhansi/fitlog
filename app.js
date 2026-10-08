@@ -5,7 +5,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.1';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -123,7 +123,8 @@ function storageUsedKB() {
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('aofl_')) n += (k.length + (localStorage.getItem(k) || '').length) * 2;
+      // Chrome begrenzt den Speicher nach Zeichenzahl (ca. 5 Mio. Zeichen je Website)
+      if (k && k.startsWith('aofl_')) n += k.length + (localStorage.getItem(k) || '').length;
     }
   } catch (e) { /* egal */ }
   return Math.round(n / 1024);
@@ -630,7 +631,7 @@ function viewData() {
     <div class="card"><h3>Importieren</h3>
       <p class="small muted" style="margin-top:6px">Sicherung vom anderen Gerät oder Startdaten einlesen. Die Daten werden zusammengeführt – nichts wird blind überschrieben. Vor dem Übernehmen siehst du eine Vorschau.</p>
       <div style="margin-top:10px"><input class="file-input" type="file" accept=".json,.txt,application/json,text/plain" data-c="import-file" aria-label="Sicherungsdatei wählen"></div></div>
-    <div class="card"><h3>Speicher</h3><p class="small muted" style="margin-top:6px">Belegt: ca. ${storageUsedKB()} KB von etwa 5.000 KB.</p></div>
+    <div class="card"><h3>Speicher</h3><p class="small muted" style="margin-top:6px">Belegt: ca. ${storageUsedKB()} KB von etwa 5.000 KB (${Math.round(storageUsedKB() / 50)} %).</p></div>
     <div class="card"><h3>Hilfe</h3><p class="small muted" style="margin-top:6px">AO fitlog Version ${APP_VERSION}</p>
       <div class="card-actions"><a class="btn ghost" href="anleitung.html" target="_blank" rel="noopener">${ic('help')}Anleitung öffnen</a></div></div></div>`;
 }
