@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AO fitlog – Benutzerleitfaden</title>
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<style>
+  :root { --ink: #1b1c20; --muted: #5d5f68; --line: #dcdde2; --soft: #f3f4f6; --lime: #8cb000; --orange: #e85d0c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); background: #fff; line-height: 1.55; font-size: 16px; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+  header.cover { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; border-bottom: 3px solid var(--ink); }
+  header.cover img { width: 72px; height: 72px; border-radius: 16px; }
+  header.cover h1 { margin: 0; font-size: 1.9rem; letter-spacing: -0.02em; }
+  header.cover p { margin: 2px 0 0; color: var(--muted); }
+  h2 { font-size: 1.35rem; margin: 40px 0 10px; padding-top: 8px; border-top: 1px solid var(--line); letter-spacing: -0.01em; }
+  h2 .n { color: var(--orange); margin-right: 6px; }
+  h3 { font-size: 1.05rem; margin: 22px 0 6px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.93rem; }
+  th, td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); font-weight: 700; }
+  code, .k { background: var(--soft); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; font-family: inherit; font-weight: 600; font-size: 0.92em; white-space: nowrap; }
+  .box { border-left: 4px solid var(--lime); background: #f6faea; padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+  .box.warn { border-color: var(--orange); background: #fff3ec; }
+  .box b:first-child { display: block; margin-bottom: 2px; }
+  nav.toc { background: var(--soft); border-radius: 10px; padding: 14px 18px; margin: 20px 0; }
+  nav.toc ol { margin: 4px 0; columns: 2; column-gap: 28px; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  figure { margin: 14px 0; }
+  figure img { display: block; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; }
+  figure.phone img { max-width: 300px; }
+  figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 5px; }
+  .figs { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+  .figs figure { flex: 0 1 300px; }
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; padding-left: 34px; position: relative; margin: 8px 0; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .back { position: fixed; right: 14px; bottom: 14px; background: var(--ink); color: #fff; text-decoration: none; padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; }
+  @media (max-width: 600px) { nav.toc ol { columns: 1; } .wrap { padding: 20px 14px 60px; } }
+  @media print {
+    @page { size: A4; margin: 16mm 15mm; }
+    body { font-size: 10.5pt; }
+    .wrap { max-width: none; padding: 0; }
+    .back { display: none; }
+    h2 { break-after: avoid; }
+    h3 { break-after: avoid; }
+    figure, table, .box { break-inside: avoid; }
+    .pb { break-before: auto; }
+    #training { break-before: page; }
+    figure img { max-height: 92mm; width: auto; }
+    figure.phone img { max-width: 52mm; max-height: none; }
+    .figs { gap: 10px; }
+    .figs figure { flex: 0 1 54mm; }
+    .figs > div { flex: 1 1 90mm !important; }
+    h2 { margin-top: 22px; }
+    a { color: var(--ink); text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <img src="icons/icon.svg" alt="">
+  <div><h1>AO fitlog – Benutzerleitfaden</h1><p>Trainingstagebuch für stetige Steigerung in kleinen Schritten · Version 1.0</p></div>
+</header>
+
+<nav class="toc" aria-label="Inhalt"><b>Inhalt</b>
+<ol>
+  <li><a href="#prinzip">Prinzip</a></li>
+  <li><a href="#install">Einrichten</a></li>
+  <li><a href="#begriffe">Begriffe</a></li>
+  <li><a href="#uebungen">Übungen anlegen (PC)</a></li>
+  <li><a href="#import">Viele Übungen importieren (PC)</a></li>
+  <li><a href="#plaene">Pläne anlegen (PC)</a></li>
+  <li><a href="#training">Trainieren (Handy)</a></li>
+  <li><a href="#steigerung">Steigerungsvorschläge</a></li>
+  <li><a href="#score">Auswertung: Index, Trend, Bestleistung</a></li>
+  <li><a href="#sync">Daten übertragen &amp; sichern</a></li>
+  <li><a href="#updates">Updates</a></li>
+  <li><a href="#hilfe">Probleme lösen</a></li>
+</ol></nav>
+
+<h2 id="prinzip"><span class="n">1</span>Prinzip</h2>
+<p>AO fitlog läuft im Browser und wird wie eine App installiert. Es gibt keinen Server und kein Konto: <b>Alle Daten liegen nur auf dem jeweiligen Gerät.</b></p>
+<table>
+  <tr><th>Gerät</th><th>Aufgabe</th></tr>
+  <tr><td><b>PC</b></td><td>Übungen anlegen, Pläne zusammenstellen, Verlauf ansehen</td></tr>
+  <tr><td><b>Handy</b></td><td>Training im Studio erfassen</td></tr>
+</table>
+<p>Beide Geräte gleichen sich über eine <b>Sicherungsdatei</b> ab (Kapitel <a href="#sync">10</a>). Die App funktioniert ohne Internet.</p>
+
+<h2 id="install"><span class="n">2</span>Einrichten</h2>
+<h3>2.1 App veröffentlichen (einmalig, am PC)</h3>
+<ol class="steps">
+  <li>Auf <b>github.com</b> anmelden › <span class="k">New repository</span> › Name z. B. <code>ao-fitlog</code> › <span class="k">Public</span> › <span class="k">Create repository</span>.</li>
+  <li><span class="k">uploading an existing file</span> anklicken und den <b>Inhalt</b> des ZIP-Ordners hineinziehen (alle Dateien und die Ordner <code>icons</code> und <code>anleitung-bilder</code>) › <span class="k">Commit changes</span>.</li>
+  <li><span class="k">Settings</span> › <span class="k">Pages</span> › Source <span class="k">Deploy from a branch</span> › Branch <code>main</code>, Ordner <code>/ (root)</code> › <span class="k">Save</span>.</li>
+  <li>Nach 1–2 Minuten ist die App erreichbar unter <code>https://BENUTZERNAME.github.io/ao-fitlog/</code>.</li>
+</ol>
+<div class="box"><b>Alte App bleibt unberührt</b>Die neue App speichert unter eigenen Schlüsseln. „AO Trainiert“ und „AO fitlog“ stören sich nicht, auch nicht unter derselben github.io-Adresse.</div>
+
+<h3>2.2 Auf dem Handy installieren</h3>
+<ol class="steps">
+  <li>Adresse in <b>Chrome</b> öffnen.</li>
+  <li>Menü <span class="k">⋮</span> › <span class="k">App installieren</span> bzw. <span class="k">Zum Startbildschirm hinzufügen</span>.</li>
+  <li>Künftig über das Icon starten. Die App öffnet sich ohne Browserleiste.</li>
+</ol>
+<h3>2.3 Am PC</h3>
+<p>Adresse in Chrome oder Edge öffnen. Optional über das Installieren-Symbol in der Adresszeile als App einrichten.</p>
+
+<h3>2.4 Erster Start (auf jedem Gerät)</h3>
+<ol class="steps">
+  <li><span class="k">Daten</span> › <b>Gerätename</b> eintragen (z. B. <code>PC</code>, <code>Handy</code>). Er erscheint im Namen der Sicherungsdateien.</li>
+  <li><span class="k">Daten</span> › <span class="k">Importieren</span> › Datei <code>AO_fitlog_Startdaten.json</code> wählen › Vorschau prüfen › <span class="k">Übernehmen</span>. Sie enthält die bisherigen Übungen mit Bildern und den Plan „vitago 1“, ohne Historie.</li>
+  <li>Unter <span class="k">Übungen</span> Typ, „Je Seite“ und „Zählt zum Score“ prüfen. Der Typ lässt sich nur ändern, solange die Übung noch nie trainiert wurde.</li>
+</ol>
+
+<h2 id="begriffe"><span class="n">3</span>Begriffe</h2>
+<table>
+  <tr><th style="width:24%">Begriff</th><th>Bedeutung</th></tr>
+  <tr><td><b>Übung</b></td><td>Eintrag in der Übungsliste mit Name, Typ, Bild, Technik und Einstellungen.</td></tr>
+  <tr><td><b>Typ</b></td><td><b>Gewicht</b> (kg × Wiederholungen), <b>Körpergewicht</b> (nur Wiederholungen) oder <b>Zeit</b> (Sekunden).</td></tr>
+  <tr><td><b>Plan</b></td><td>Feste Abfolge von Übungen mit Satzzahl und Zielwerten.</td></tr>
+  <tr><td><b>Workout</b></td><td>Ein durchgeführtes Training. Es wird im Verlauf gespeichert.</td></tr>
+  <tr><td><b>Satz</b></td><td>Eine Zeile im Training. Er zählt erst, wenn er abgehakt ist.</td></tr>
+  <tr><td><b>Je Seite</b></td><td>Einseitige Übung. Die Werte gelten pro Seite.</td></tr>
+  <tr><td><b>Ohne Wertung</b></td><td>Übung zählt nicht zum Score, z. B. Mobilisation. Sie wird trotzdem protokolliert.</td></tr>
+  <tr><td><b>Index</b></td><td>Leistung im Vergleich zum ersten Training der Übung (= 100).</td></tr>
+  <tr><td><b>Trend</b></td><td>Veränderung in Prozent gegenüber dem letzten Training der Übung.</td></tr>
+  <tr><td><b>Vorschlag</b></td><td>Empfohlener kleiner Steigerungsschritt fürs heutige Training.</td></tr>
+</table>
+
+<h2 id="uebungen" class="pb"><span class="n">4</span>Übungen anlegen (PC)</h2>
+<p><span class="k">Übungen</span> › <span class="k">+ Neue Übung</span>. Zum Bearbeiten eine Übung in der Liste anklicken.</p>
+<figure><img src="anleitung-bilder/07_pc_uebung.jpg" alt="Übung bearbeiten am PC"><figcaption>Übung bearbeiten am PC</figcaption></figure>
+<table>
+  <tr><th style="width:28%">Feld</th><th>Bedeutung</th></tr>
+  <tr><td>Name</td><td>Pflicht. Jeder Name darf nur einmal vorkommen.</td></tr>
+  <tr><td>Typ</td><td>Gewicht, Körpergewicht oder Zeit. Nach dem ersten Training fest, damit die Auswertung stimmt.</td></tr>
+  <tr><td>Steigerung</td><td>Größe eines Vorschlagsschritts. Standard: <b>0,5 kg</b> · <b>1 Wdh</b> · <b>5 s</b>. Bei Kurzhanteln mit festen Stufen (z. B. 12 → 14 kg) hier <code>2</code> eintragen.</td></tr>
+  <tr><td>Wdh-Bereich von / bis</td><td>Nur Typ Gewicht. Standard 8 bis 12. Siehe Kapitel <a href="#steigerung">8</a>.</td></tr>
+  <tr><td>Je Seite</td><td>Für einseitige Übungen anhaken.</td></tr>
+  <tr><td>Zählt zum Score</td><td>Für Mobilisation und Technikübungen abhaken. Dann gibt es auch keinen Steigerungsvorschlag.</td></tr>
+  <tr><td>Bild</td><td><b>Strg+V</b> fügt ein kopiertes Bild ein (z. B. Screenshot aus Greenshot). Alternativ: Datei hineinziehen oder <span class="k">Datei wählen</span>. Bilder werden automatisch verkleinert.</td></tr>
+  <tr><td>Beschreibung / Technik</td><td>Im Training unter „Technik &amp; Bild“ aufklappbar.</td></tr>
+  <tr><td>Kommentar / Einstellung</td><td>Im Training <b>immer sichtbar</b>, z. B. „Sitzhöhe 3“.</td></tr>
+  <tr><td>Link</td><td>Optional, z. B. Video. Muss mit <code>https://</code> beginnen.</td></tr>
+</table>
+<p><b>Löschen:</b> Papierkorb im Bearbeiten-Fenster. Das geht nur, wenn die Übung in keinem Plan steht. Danach erscheint einige Sekunden lang <span class="k">Rückgängig</span>.</p>
+
+<h2 id="import"><span class="n">5</span>Viele Übungen importieren (PC)</h2>
+<p>Neue Übungen lassen sich in einer Excel-Liste sammeln und gesammelt einlesen.</p>
+<ol class="steps">
+  <li>Datei <code>AO_fitlog_Uebungen_Vorlage.xlsx</code> öffnen. Im Blatt „Übungen“ eine Zeile pro Übung ausfüllen. Das Blatt „Erklärung“ beschreibt jede Spalte.</li>
+  <li><span class="k">Datei</span> › <span class="k">Speichern unter</span> › Dateityp <b>CSV UTF-8 (durch Trennzeichen getrennt)</b>. Den Hinweis von Excel mit <span class="k">Ja</span> bestätigen.</li>
+  <li>Bilder in <b>denselben Ordner</b> wie die CSV-Datei legen.</li>
+  <li>App › <span class="k">Übungen</span> › <span class="k">Import</span> › im Dateidialog <b>Strg+A</b> (CSV und Bilder gemeinsam markieren) › <span class="k">Öffnen</span>.</li>
+  <li>Vorschau prüfen › <span class="k">… Übungen importieren</span>.</li>
+</ol>
+<table>
+  <tr><th style="width:28%">Spalte „Bild“</th><th>Ergebnis</th></tr>
+  <tr><td>Dateiname, z. B. <code>goblet.jpg</code></td><td>Genau diese Datei wird verwendet.</td></tr>
+  <tr><td>leer</td><td>Es wird eine Datei gesucht, die genauso heißt wie die Übung (z. B. <code>Goblet Squat.jpg</code>). Gibt es keine, bleibt die Übung ohne Bild.</td></tr>
+</table>
+<div class="box"><b>Was die Vorschau anzeigt</b>„Neu“ wird importiert. „Existiert bereits“ und „Typ unbekannt“ werden übersprungen. „Bild fehlt“ wird ohne Bild importiert. Bilder lassen sich später per Strg+V ergänzen.</div>
+
+<h2 id="plaene"><span class="n">6</span>Pläne anlegen (PC)</h2>
+<ol class="steps">
+  <li><span class="k">Pläne</span> › <span class="k">+ Neuer Plan</span> › Name eingeben.</li>
+  <li>Über <span class="k">+ Übung hinzufügen …</span> Übungen auswählen.</li>
+  <li>Je Übung <b>Sätze</b>, <b>Wdh/Sekunden</b> und bei Gewichtsübungen <b>kg</b> eintragen.</li>
+  <li>Reihenfolge mit den Pfeilen oder per Ziehen am Griff <span class="k">⠿</span> ändern › <span class="k">Speichern</span>.</li>
+</ol>
+<div class="box"><b>Zielwerte gelten nur beim ersten Mal</b>Ab dem zweiten Training übernimmt die App die Werte vom letzten Training der jeweiligen Übung, egal in welchem Plan sie war.</div>
+
+<h3>Sperre und neue Version</h3>
+<p>Sobald mit einem Plan trainiert wurde, ist seine <b>Struktur gesperrt</b>. So bleiben alle Workouts eines Plans vergleichbar.</p>
+<table>
+  <tr><th>Weiter änderbar</th><th>Gesperrt</th></tr>
+  <tr><td>Name, Reihenfolge, Zielwerte</td><td>Übungen hinzufügen/entfernen, Satzzahl</td></tr>
+</table>
+<p>Für strukturelle Änderungen: Plan bearbeiten › <span class="k">Als neue Version anlegen</span>. Die App legt eine Kopie an (z. B. „vitago 1 V2“) und verschiebt die alte Version ins <b>Archiv</b>. Archivierte Pläne erscheinen nicht mehr beim Trainingsstart, ihre Workouts bleiben erhalten. Über <span class="k">Archiv</span> › <span class="k">Wiederherstellen</span> lassen sie sich zurückholen.</p>
+<figure><img src="anleitung-bilder/06_pc_plan_gesperrt.jpg" alt="Gesperrter Plan im Editor"><figcaption>Gesperrter Plan: Hinweis mit „Als neue Version anlegen“</figcaption></figure>
+<p><span class="k">Kopieren</span> erstellt eine ungesperrte Kopie, ohne das Original zu archivieren. <span class="k">Löschen</span> gibt es nur für Pläne ohne Workouts, sonst <span class="k">Archivieren</span>.</p>
+
+<h2 id="training" class="pb"><span class="n">7</span>Trainieren (Handy)</h2>
+<div class="figs">
+  <figure class="phone"><img src="anleitung-bilder/01_training_start.jpg" alt="Startseite Training"><figcaption>Startseite: Plan wählen</figcaption></figure>
+  <figure class="phone"><img src="anleitung-bilder/02_workout_vorschlag.jpg" alt="Übung mit Vorschlag"><figcaption>Aktuelle Übung mit Vorschlag</figcaption></figure>
+  <figure class="phone"><img src="anleitung-bilder/03_workout_saetze.jpg" alt="Sätze mit Vergleich"><figcaption>Abgehakte Sätze mit Vergleich zum letzten Mal</figcaption></figure>
+</div>
+<h3>7.1 Starten</h3>
+<p><span class="k">Training</span> › beim gewünschten Plan <span class="k">Starten</span>. Das Display bleibt während des Trainings an.</p>
+<h3>7.2 Bedienung</h3>
+<table>
+  <tr><th style="width:30%">Element</th><th>Funktion</th></tr>
+  <tr><td><span class="k">−</span> <span class="k">+</span></td><td>Gewicht ±0,5 kg · Wiederholungen ±1 · Zeit ± Steigerungsschritt (Standard 5 s). Werte lassen sich auch antippen und eintippen (Komma erlaubt).</td></tr>
+  <tr><td><span class="k">✓</span></td><td>Satz erledigt. <b>Nur abgehakte Sätze zählen.</b> Nochmal tippen hebt das Abhaken auf.</td></tr>
+  <tr><td>„zuletzt …“</td><td>Wert vom letzten Training. Nach dem Abhaken: <b>▲ mehr</b>, <b>= gleich</b> oder <b>▼ weniger</b>.</td></tr>
+  <tr><td>Vorschlag › <span class="k">Übernehmen</span></td><td>Setzt den empfohlenen kleinen Steigerungsschritt. Ignorieren ist jederzeit möglich.</td></tr>
+  <tr><td>Orange Notiz</td><td>Deine Notiz vom letzten Training dieser Übung.</td></tr>
+  <tr><td>Grauer Kasten</td><td>Kommentar/Einstellung der Übung, z. B. Sitzhöhe.</td></tr>
+  <tr><td>Technik &amp; Bild</td><td>Aufklappen für Beschreibung, Bild und Link. Bild antippen vergrößert es.</td></tr>
+  <tr><td><span class="k">+ Satz</span> / <span class="k">− Satz</span></td><td>Satz für heute ergänzen oder entfernen. Der Plan bleibt unverändert.</td></tr>
+  <tr><td>Wie war's?</td><td><b>leicht · passt · schwer</b> (optional). „Schwer“ verhindert beim nächsten Mal einen Steigerungsvorschlag.</td></tr>
+  <tr><td>Notiz fürs nächste Mal</td><td>Erscheint beim nächsten Training dieser Übung, z. B. „Gerät belegt“.</td></tr>
+  <tr><td><span class="k">Überspringen</span></td><td>Übung heute auslassen. Sie wird nicht als Rückschritt gewertet.</td></tr>
+  <tr><td><span class="k">+ Übung hinzufügen</span></td><td>Weitere Übung für heute aus der Liste ergänzen.</td></tr>
+</table>
+<p><b>Fokus:</b> Aufgeklappt ist nur die aktuelle Übung. Ist sie vollständig abgehakt, klappt sie zu und die nächste öffnet sich. Jede Übung lässt sich per Tipp auf den Titel auf- und zuklappen.</p>
+<h3>7.3 Beenden</h3>
+<ul>
+  <li><span class="k">Abschließen</span> speichert das Workout und zeigt die Auswertung.</li>
+  <li><span class="k">Abbrechen</span> verwirft das Workout.</li>
+  <li>Wird die App zwischendurch geschlossen, bleibt das laufende Workout erhalten.</li>
+</ul>
+<h3>7.4 Nacherfassen und freies Training</h3>
+<ul>
+  <li><b>Nacherfassen</b> (beim Plan): für ein Training, das nicht live erfasst wurde. Datum, Beginn und Dauer eintragen, Werte anpassen, <span class="k">Alle Sätze abhaken</span> › <span class="k">Speichern</span>.</li>
+  <li><b>Freies Training</b>: ohne Plan, mit Titel und Notizen (z. B. Joggen). Übungen über <span class="k">+ Übung hinzufügen</span> ergänzen.</li>
+</ul>
+
+<h2 id="steigerung"><span class="n">8</span>Steigerungsvorschläge</h2>
+<p>Grundsatz: <b>Pro Übung und Training höchstens ein kleiner Schritt, und nur in einem Satz.</b> Es wird immer der schwächste Satz angehoben.</p>
+<table>
+  <tr><th style="width:20%">Typ</th><th>Vorschlag</th><th style="width:32%">Beispiel</th></tr>
+  <tr><td>Zeit</td><td>Ein Satz + Schritt (Standard 5 s)</td><td>30/30/30 → 35/30/30 → 35/35/30</td></tr>
+  <tr><td>Körpergewicht</td><td>Ein Satz +1 Wdh</td><td>10/10/10 → 11/10/10</td></tr>
+  <tr><td>Gewicht</td><td>Ein Satz +1 Wdh, bis <b>alle</b> Sätze das obere Ende des Bereichs erreichen. Dann Gewicht + Schritt (Standard 0,5 kg), Wdh zurück auf das untere Ende.</td><td>12 kg × 12/12/12 → 12,5 kg × 8/8/8</td></tr>
+</table>
+<p><b>Kein Vorschlag, Werte halten</b>, wenn beim letzten Mal nicht alle Sätze abgehakt wurden oder die Übung als „schwer“ markiert war. Übungen „ohne Wertung“ bekommen keine Vorschläge.</p>
+
+<h2 id="score"><span class="n">9</span>Auswertung: Index, Trend, Bestleistung</h2>
+<div class="figs">
+  <figure class="phone"><img src="anleitung-bilder/04_zusammenfassung.jpg" alt="Auswertung nach dem Training"><figcaption>Auswertung nach dem Abschließen</figcaption></figure>
+  <div style="flex:1 1 320px">
+    <h3>Leistung einer Übung</h3>
+    <table>
+      <tr><th>Typ</th><th>Wert pro Satz</th></tr>
+      <tr><td>Gewicht</td><td>kg × (1 + Wdh ÷ 30)<br><span style="color:var(--muted)">„Belastungswert“: belohnt mehr Gewicht auch bei weniger Wdh</span></td></tr>
+      <tr><td>Körpergewicht</td><td>Wiederholungen</td></tr>
+      <tr><td>Zeit</td><td>Sekunden</td></tr>
+    </table>
+    <p>Leistung = Summe der <b>abgehakten</b> Sätze ÷ Anzahl der Sätze. Ein ausgelassener Satz senkt die Leistung, eine andere Satzzahl verzerrt sie nicht.</p>
+  </div>
+</div>
+<table>
+  <tr><th style="width:22%">Kennzahl</th><th>Bedeutung</th></tr>
+  <tr><td><b>Ø-Index</b></td><td>Durchschnitt aller gewerteten Übungen. 100 = Niveau beim ersten Training der jeweiligen Übung. 104,3 = im Schnitt 4,3 % besser als am Anfang.</td></tr>
+  <tr><td><b>Trend</b></td><td>Durchschnittliche Veränderung zum letzten Training jeder Übung (planübergreifend). Grün ▲ = gesteigert, Rot ▼ = weniger.</td></tr>
+  <tr><td><b>Bestleistung ★</b></td><td>Leistung höher als in allen bisherigen Trainings dieser Übung.</td></tr>
+  <tr><td><b>Basis</b></td><td>Erstes Training einer Übung. Es gibt noch keinen Vergleich.</td></tr>
+</table>
+<p><b>Beispiel SkiErg</b> (3 Sätze): 30/30/30 s ergibt 30. Mit 35/30/30 s ergibt sich 31,67, also <b>+5,6 %</b>.</p>
+<p><b>Verlauf:</b> Kalender (grün = Trainingstag), Anzahl pro Woche und Monat, Liste aller Workouts. Ein Tipp öffnet die Details. Dort lässt sich ein Workout auch löschen (mit Rückgängig).</p>
+<figure><img src="anleitung-bilder/08_pc_verlauf.jpg" alt="Verlauf am PC"><figcaption>Verlauf am PC</figcaption></figure>
+
+<h2 id="sync" class="pb"><span class="n">10</span>Daten übertragen &amp; sichern</h2>
+<div class="box warn"><b>Wichtig</b>Die Daten liegen nur im Browser des Geräts. Wer die Browserdaten löscht oder das Handy zurücksetzt, verliert sie. Die Sicherungsdatei ist die einzige Kopie, deshalb regelmäßig sichern.</div>
+<div class="figs">
+  <figure class="phone"><img src="anleitung-bilder/05_daten.jpg" alt="Bereich Daten"><figcaption>Bereich „Daten“</figcaption></figure>
+  <div style="flex:1 1 320px">
+    <h3>Handy → PC (nach dem Training)</h3>
+    <ol class="steps">
+      <li>Handy: <span class="k">Daten</span> › <span class="k">Teilen …</span> › z. B. per Mail an dich selbst oder in Google Drive.</li>
+      <li>PC: Datei speichern › App › <span class="k">Daten</span> › <span class="k">Importieren</span> › Datei wählen › <span class="k">Übernehmen</span>.</li>
+    </ol>
+    <h3>PC → Handy (nach Planänderungen)</h3>
+    <ol class="steps">
+      <li>PC: <span class="k">Daten</span> › <span class="k">Als Datei speichern</span> › Datei aufs Handy schicken (Mail, Drive, Kabel).</li>
+      <li>Handy: <span class="k">Daten</span> › <span class="k">Importieren</span> › Datei wählen › <span class="k">Übernehmen</span>.</li>
+    </ol>
+  </div>
+</div>
+<h3>Regeln beim Import</h3>
+<ul>
+  <li><b>Zusammenführen statt Überschreiben.</b> Vorher zeigt eine Vorschau, was sich ändert.</li>
+  <li>Workouts werden ergänzt, nie überschrieben.</li>
+  <li>Bei Übungen und Plänen gewinnt die zuletzt geänderte Fassung.</li>
+  <li>Löschungen werden übertragen: Auf einem Gerät gelöscht heißt nach dem Import auch auf dem anderen gelöscht.</li>
+  <li>Ein laufendes Workout wird nicht übertragen.</li>
+</ul>
+<h3>Dateien</h3>
+<p>Beim <b>Teilen</b> heißt die Datei <code>…​.txt</code> (Android erlaubt keine .json-Dateien zum Teilen), beim <b>Speichern</b> <code>…​.json</code>. Beide lassen sich importieren. Der Name enthält Gerät, Datum und Uhrzeit, z. B. <code>AO_fitlog_Handy_2026-10-07_19-45.txt</code>.</p>
+<h3>Erinnerung</h3>
+<p>Nach <b>3 Workouts ohne Sicherung</b> erscheint auf der Trainingsseite ein Hinweis mit <span class="k">Jetzt sichern</span>, und <span class="k">Daten</span> trägt einen orangen Punkt.</p>
+
+<h2 id="updates"><span class="n">11</span>Updates</h2>
+<p>Liegt auf GitHub eine neue Version, zeigt die App oben <b>„Neue Version verfügbar“</b>. <span class="k">Neu laden</span> aktiviert sie. Ein laufendes Workout bleibt dabei erhalten.</p>
+<p><b>Für den Betreiber:</b> Neue Dateien auf GitHub hochladen (vorhandene ersetzen). Die Geräte erkennen ein Update an der Versionsnummer in <code>sw.js</code> (Zeile <code>const VERSION</code>). Sie muss bei jeder Änderung erhöht werden.</p>
+
+<h2 id="hilfe"><span class="n">12</span>Probleme lösen</h2>
+<table>
+  <tr><th style="width:36%">Problem</th><th>Lösung</th></tr>
+  <tr><td>„Keine AO-fitlog-Datei“ beim Import</td><td>Die Datei stammt aus einer anderen App (z. B. „AO Trainiert“). Nur Sicherungen von AO fitlog oder die Startdaten-Datei verwenden.</td></tr>
+  <tr><td>„Speicher voll“</td><td>Daten sichern, große Bilder entfernen oder durch kleinere ersetzen. Belegung unter <span class="k">Daten</span> › Speicher (ca. 5.000 KB verfügbar).</td></tr>
+  <tr><td>Typ einer Übung nicht änderbar</td><td>Die Übung wurde bereits trainiert. Neue Übung mit anderem Namen anlegen.</td></tr>
+  <tr><td>Übung im Plan nicht entfernbar</td><td>Der Plan ist gesperrt. <span class="k">Als neue Version anlegen</span> verwenden (Kapitel <a href="#plaene">6</a>).</td></tr>
+  <tr><td>Übung lässt sich nicht löschen</td><td>Sie steht in einem Plan, auch archivierte Pläne zählen.</td></tr>
+  <tr><td>Kein Vorschlag angezeigt</td><td>Erstes Training der Übung, Übung „ohne Wertung“, oder es gilt „Werte halten“ (Kapitel <a href="#steigerung">8</a>).</td></tr>
+  <tr><td>„Teilen …“ fehlt</td><td>Das Gerät unterstützt kein Teilen von Dateien. <span class="k">Als Datei speichern</span> verwenden.</td></tr>
+  <tr><td>CSV-Import: Umlaute falsch</td><td>In Excel als <b>CSV UTF-8</b> speichern, nicht als einfaches „CSV“.</td></tr>
+  <tr><td>Versehentlich gelöscht</td><td>Sofort <span class="k">Rückgängig</span> in der Meldung unten tippen (7 Sekunden). Danach hilft nur der Import einer älteren Sicherung.</td></tr>
+  <tr><td>App zeigt alte Version</td><td>App schließen und neu öffnen. Bei „Neue Version verfügbar“ <span class="k">Neu laden</span> tippen.</td></tr>
+</table>
+
+<p style="margin-top:36px;color:var(--muted);font-size:0.85rem">AO fitlog 1.0 · Diese Anleitung ist in der App jederzeit über das <b>?</b> oben rechts erreichbar.</p>
+</div>
+<a class="back" href="./">‹ Zur App</a>
+</body>
+</html>
