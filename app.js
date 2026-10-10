@@ -1,11 +1,12 @@
 /* AO fitlog – App-Logik
    Daten liegen lokal im Browser (localStorage, Schlüssel "aofl_…").
    Aufbau: 1 Grundlagen · 2 Speicher · 3 Auswertung · 4 Oberfläche · 5 Ansichten
-           6 Dialoge · 7 Aktionen · 8 Sicherung/Import · 9 CSV-Import · 10 Start */
+           6 Dialoge · 7 Aktionen · 8 Sicherung/Import · 8b Abgleich über GitHub
+           9 CSV-Import · 10 Start */
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.1.0';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -321,7 +322,7 @@ const ui = { tab: 'workout', open: {}, calMonth: null, exQuery: '', showArchive:
 
 function renderNav() {
   $('#nav').innerHTML = TABS.map((t) =>
-    `<button class="nav-btn ${ui.tab === t.id ? 'active' : ''} ${t.id === 'data' && needsBackup() ? 'nav-dot' : ''}" data-a="tab" data-tab="${t.id}" aria-label="${t.label}">${ic(t.icon)}<span>${t.label}</span></button>`
+    `<button class="nav-btn ${ui.tab === t.id ? 'active' : ''} ${t.id === 'data' && (needsBackup() || ui.syncNews) ? 'nav-dot' : ''}" data-a="tab" data-tab="${t.id}" aria-label="${t.label}">${ic(t.icon)}<span>${t.label}</span></button>`
   ).join('');
 }
 function render() {
@@ -421,8 +422,11 @@ function viewWorkoutHome() {
   const plans = db.plans.filter((p) => !p.archived).sort(byName);
   const series = buildSeries();
   let h = '<div class="view-inner narrow"><div class="page-head"><h1>Training</h1></div>';
+  if (ui.syncNews) {
+    h += `<div class="callout tip" style="margin:0 0 14px"><div class="row"><span>Neue Daten von einem anderen Gerät liegen bereit.</span><button class="btn sm" data-a="sync-fetch">Holen</button></div></div>`;
+  }
   if (needsBackup()) {
-    h += `<div class="callout note" style="margin:0 0 14px"><div class="row"><span>${db.meta.sinceExport} Workouts seit der letzten Sicherung.</span><button class="btn sm" data-a="backup">Jetzt sichern</button></div></div>`;
+    h += `<div class="callout note" style="margin:0 0 14px"><div class="row"><span>${db.meta.sinceExport} Workouts noch nicht gesendet oder gesichert.</span><button class="btn sm" data-a="backup">${syncReady() ? 'Senden' : 'Jetzt sichern'}</button></div></div>`;
   }
   if (!db.exercises.length) {
     h += `<div class="card"><h3>Willkommen bei AO fitlog</h3><p class="muted small" style="margin-top:6px">Noch keine Übungen vorhanden. Importiere die Startdaten oder eine Sicherung, oder lege Übungen selbst an.</p>
@@ -618,19 +622,40 @@ function exerciseList() {
 function canShareFiles() {
   try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.txt', { type: 'text/plain' })] })); } catch (e) { return false; }
 }
+function syncCardHtml() {
+  if (!syncReady()) {
+    return `<div class="card"><h3>Abgleich über GitHub</h3>
+      <p class="small muted" style="margin-top:6px">Der bequemste Weg zwischen Handy und PC: <b>Senden</b> auf dem einen Gerät, <b>Holen</b> auf dem anderen – mit Bildern. Dafür brauchst du ein kostenloses GitHub-Konto (einmalige Einrichtung, siehe Anleitung).</p>
+      <div class="card-actions"><button class="btn" data-a="sync-setup">${ic('sync')}Einrichten</button><a class="btn ghost" href="anleitung.html#github" target="_blank" rel="noopener">${ic('help')}So geht's</a></div></div>`;
+  }
+  const t = (ts) => ts ? `${fmtDate(ts)}, ${fmtTime(ts)} Uhr` : 'noch nie';
+  const busy = ui.syncBusy;
+  return `<div class="card"><h3>Abgleich über GitHub</h3>
+    <p class="small muted" style="margin-top:6px">Ablage: <b>${esc(sync.repo)}</b><br>Zuletzt gesendet: <b>${t(sync.lastSend)}</b><br>Zuletzt geholt: <b>${t(sync.lastFetch)}</b></p>
+    ${ui.syncNews && !busy ? '<div class="callout tip">Ein anderes Gerät hat neue Daten gesendet.</div>' : ''}
+    <div class="btn-row" style="margin-top:12px"><button class="btn" data-a="sync-send" ${busy ? 'disabled' : ''}>${ic('upload')}${busy && busy !== 'Holen …' ? esc(busy) : 'Senden'}</button>
+      <button class="btn ${ui.syncNews ? 'lime' : 'ghost'}" data-a="sync-fetch" ${busy ? 'disabled' : ''}>${ic('download')}${busy === 'Holen …' ? esc(busy) : 'Holen'}</button></div>
+    <p class="hint"><b>Senden</b> legt alle Daten dieses Geräts samt Bildern auf GitHub ab. <b>Holen</b> übernimmt, was die anderen Geräte gesendet haben – mit Vorschau, nichts wird blind überschrieben.</p>
+    <div class="card-actions"><button class="btn sm ghost" data-a="sync-setup" ${busy ? 'disabled' : ''}>Einstellungen</button></div></div>`;
+}
 function viewData() {
   const last = db.meta.lastExport ? `${fmtDate(db.meta.lastExport)}, ${fmtTime(db.meta.lastExport)} Uhr` : 'noch nie';
+  const since = changesSince();
   const share = canShareFiles();
   return `<div class="view-inner narrow"><div class="page-head"><h1>Daten</h1></div>
-    <div class="card"><h3>Dieses Gerät</h3><div class="field" style="margin-top:10px;margin-bottom:0"><label for="dev">Gerätename (erscheint im Dateinamen)</label>
+    <div class="card"><h3>Dieses Gerät</h3><div class="field" style="margin-top:10px;margin-bottom:0"><label for="dev">Gerätename (erscheint im Dateinamen und beim Abgleich)</label>
       <input type="text" id="dev" value="${esc(db.device)}" placeholder="z. B. Handy oder PC" data-c="device"></div></div>
-    <div class="card"><h3>Sichern &amp; übertragen</h3>
-      <p class="small muted" style="margin-top:6px">Letzte Sicherung: <b>${last}</b>${db.meta.sinceExport ? ` · seitdem ${db.meta.sinceExport} Workout(s)` : ''}</p>
-      <div class="card-actions">${share ? `<button class="btn" data-a="export-share">${ic('share')}Teilen …</button>` : ''}<button class="btn ${share ? 'ghost' : ''}" data-a="export-file">${ic('download')}Als Datei speichern</button></div>
-      <p class="hint">Die Datei enthält alle Übungen (mit Bildern), Pläne und Workouts.</p></div>
-    <div class="card"><h3>Importieren</h3>
-      <p class="small muted" style="margin-top:6px">Sicherung vom anderen Gerät oder Startdaten einlesen. Die Daten werden zusammengeführt – nichts wird blind überschrieben. Vor dem Übernehmen siehst du eine Vorschau.</p>
-      <div style="margin-top:10px"><input class="file-input" type="file" accept=".json,.txt,application/json,text/plain" data-c="import-file" aria-label="Sicherungsdatei wählen"></div></div>
+    ${syncCardHtml()}
+    <div class="card"><h3>Austausch per Datei</h3>
+      <div class="label" style="margin-top:12px">Nur Änderungen</div>
+      <p class="small muted">Alles, was seit <b>${since ? `${fmtDate(since)}, ${fmtTime(since)} Uhr` : 'Beginn'}</b> neu oder geändert ist, mit Bildern. Klein und schnell verschickt.</p>
+      <div class="card-actions" style="margin-top:8px">${share ? `<button class="btn" data-a="delta-share">${ic('share')}Änderungen teilen …</button>` : ''}<button class="btn ${share ? 'ghost' : ''}" data-a="delta-file">${ic('download')}Änderungen als Datei</button></div>
+      <div class="label" style="margin-top:16px">Vollständige Sicherung</div>
+      <p class="small muted">Alle Übungen mit Bildern, Pläne und Workouts. Letzte vollständige Sicherung: <b>${last}</b>${db.meta.sinceExport ? ` · seitdem ${db.meta.sinceExport} Workout(s) nicht gesichert` : ''}</p>
+      <div class="card-actions" style="margin-top:8px">${share ? `<button class="btn ghost" data-a="export-share">${ic('share')}Sicherung teilen …</button>` : ''}<button class="btn ghost" data-a="export-file">${ic('download')}Sicherung als Datei</button></div></div>
+    <div class="card"><h3>Datei importieren</h3>
+      <p class="small muted" style="margin-top:6px">Sicherung, Änderungsdatei oder Startdaten einlesen. Die Daten werden zusammengeführt – nichts wird blind überschrieben. Vor dem Übernehmen siehst du eine Vorschau.</p>
+      <div style="margin-top:10px"><input class="file-input" type="file" accept=".json,.txt,application/json,text/plain" data-c="import-file" aria-label="Datei zum Importieren wählen"></div></div>
     <div class="card"><h3>Speicher</h3><p class="small muted" style="margin-top:6px">Belegt: ca. ${storageUsedKB()} KB von etwa 5.000 KB (${Math.round(storageUsedKB() / 50)} %).</p></div>
     <div class="card"><h3>Hilfe</h3><p class="small muted" style="margin-top:6px">AO fitlog Version ${APP_VERSION}</p>
       <div class="card-actions"><a class="btn ghost" href="anleitung.html" target="_blank" rel="noopener">${ic('help')}Anleitung öffnen</a></div></div></div>`;
@@ -656,7 +681,7 @@ function showWorkout(id, justFinished) {
     <p class="hint" style="margin-top:-6px;margin-bottom:10px">Index 100 = dein erstes Training der Übung. Trend = Veränderung zum letzten Training der jeweiligen Übung.</p>
     ${w.notes ? `<div class="callout info" style="margin-bottom:10px">${esc(w.notes)}</div>` : ''}
     <div>${rows || '<p class="muted small">Keine Übungen erfasst.</p>'}</div>
-    <div class="modal-foot">${justFinished && needsBackup() ? `<button class="btn" data-a="backup">${ic('share')}Jetzt sichern</button>` : ''}
+    <div class="modal-foot">${justFinished && syncReady() ? `<button class="btn" data-a="backup">${ic('upload')}Senden</button>` : justFinished && needsBackup() ? `<button class="btn" data-a="backup">${ic('share')}Jetzt sichern</button>` : ''}
       ${!justFinished ? `<button class="btn danger" data-a="wo-del" data-id="${w.id}">${ic('trash')}Löschen</button>` : ''}
       <button class="btn ghost" data-a="modal-close">Schließen</button></div>`;
   openModal(html, { dismiss: true });
@@ -1129,9 +1154,19 @@ const ACTIONS = {
   },
 
   // Daten
-  backup: () => { closeModal(); if (canShareFiles()) exportShare(); else exportFile(); },
-  'export-share': () => exportShare(),
-  'export-file': () => exportFile(),
+  backup: () => { closeModal(); if (syncReady()) syncSend(); else if (canShareFiles()) exportShare(); else exportFile(); },
+  'export-share': () => exportShare(false),
+  'export-file': () => exportFile(false),
+  'delta-share': () => exportShare(true),
+  'delta-file': () => exportFile(true),
+  'sync-setup': () => openModal(syncSetupHtml(), { dismiss: true }),
+  'sync-save': () => syncSaveSetup(),
+  'sync-off': () => {
+    if (!confirm('Abgleich auf diesem Gerät trennen? Der Token wird hier gelöscht. Deine Daten auf dem Gerät und auf GitHub bleiben erhalten.')) return;
+    sync = null; saveSync(); ui.syncNews = false; closeModal(); render(); toast('Abgleich getrennt.');
+  },
+  'sync-send': () => syncSend(),
+  'sync-fetch': () => syncFetch(),
   'import-apply': () => applyImport(),
 
   // CSV
@@ -1195,44 +1230,67 @@ const INPUTS = {
 };
 
 /* ================= 8 Sicherung & Import ================= */
-function buildExport() {
+// since = null: vollständige Sicherung. since = Zeitpunkt: nur was danach neu oder geändert ist.
+function changedSince(x, since) { return !since || (x.updatedAt || x.createdAt || x.start || 0) > since; }
+function buildExport(since = null, withImages = true) {
+  const exercises = db.exercises.filter((x) => changedSince(x, since));
   const images = {};
-  for (const ex of db.exercises) if (ex.hasImg) { const d = getImg(ex.id); if (d) images[ex.id] = d; }
+  if (withImages) for (const ex of exercises) if (ex.hasImg) { const d = getImg(ex.id); if (d) images[ex.id] = d; }
+  const deleted = {};
+  for (const [id, ts] of Object.entries(db.deleted || {})) if (!since || ts > since) deleted[id] = ts;
   const data = {
     app: 'ao-fitlog', schema: 1, version: APP_VERSION, exportedAt: Date.now(), device: db.device || '',
-    exercises: db.exercises, plans: db.plans, workouts: db.workouts, deleted: db.deleted, images
+    partial: !!since, since: since || null,
+    exercises, plans: db.plans.filter((x) => changedSince(x, since)), workouts: db.workouts.filter((x) => changedSince(x, since)),
+    deleted, images
   };
   const d = new Date();
   const dev = (db.device || 'Geraet').replace(/[^A-Za-z0-9_-]+/g, '_');
   const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}`;
-  return { json: JSON.stringify(data), base: `AO_fitlog_${dev}_${stamp}` };
+  const count = exercises.length + data.plans.length + data.workouts.length + Object.keys(deleted).length;
+  return { json: JSON.stringify(data), base: `AO_fitlog_${dev}${since ? '_Aenderungen' : ''}_${stamp}`, count };
 }
-function markExported() { db.meta.lastExport = Date.now(); db.meta.sinceExport = 0; save(); render(); }
-async function exportShare() {
-  const { json, base } = buildExport();
+// Ab wann „Nur Änderungen“ zählt: Zeitpunkt der letzten Datei (vollständig oder Änderungen).
+function changesSince() { return db.meta.changesSince || db.meta.lastExport || null; }
+function markExported(partial) {
+  const now = Date.now();
+  if (!partial) db.meta.lastExport = now;
+  db.meta.changesSince = now;
+  db.meta.sinceExport = 0;
+  save(); render();
+}
+function exportPrepare(partial) {
+  const out = buildExport(partial ? changesSince() : null);
+  if (partial && !out.count) { toast('Seit der letzten Datei gibt es keine Änderungen.'); return null; }
+  return out;
+}
+async function exportShare(partial = false) {
+  const out = exportPrepare(partial);
+  if (!out) return;
   // Android erlaubt beim Teilen keine .json-Dateien – daher .txt (Import akzeptiert beides).
-  const file = new File([json], base + '.txt', { type: 'text/plain' });
+  const file = new File([out.json], out.base + '.txt', { type: 'text/plain' });
   try {
-    await navigator.share({ files: [file], title: 'AO fitlog Sicherung' });
-    markExported();
-    toast('Sicherung geteilt.');
+    await navigator.share({ files: [file], title: partial ? 'AO fitlog Änderungen' : 'AO fitlog Sicherung' });
+    markExported(partial);
+    toast(partial ? 'Änderungen geteilt.' : 'Sicherung geteilt.');
   } catch (e) {
     if (e && e.name === 'AbortError') return;
-    exportFile();
+    exportFile(partial);
   }
 }
-function exportFile() {
-  const { json, base } = buildExport();
-  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+function exportFile(partial = false) {
+  const out = exportPrepare(partial);
+  if (!out) return;
+  const url = URL.createObjectURL(new Blob([out.json], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = base + '.json';
+  a.download = out.base + '.json';
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  markExported();
-  toast('Sicherungsdatei gespeichert.');
+  markExported(partial);
+  toast(partial ? 'Änderungsdatei gespeichert.' : 'Sicherungsdatei gespeichert.');
 }
 
 // Führt eingehende Daten in target zusammen und liefert einen Bericht.
@@ -1262,6 +1320,12 @@ function mergeInto(target, inc) {
   target.workouts = target.workouts.filter((w) => { if (del[w.id]) { rep.removed++; return false; } return true; });
   return rep;
 }
+function emptyInc() { return { app: 'ao-fitlog', exercises: [], plans: [], workouts: [], deleted: {}, images: {} }; }
+function previewMerge(inc) {
+  return mergeInto(JSON.parse(JSON.stringify({ exercises: db.exercises, plans: db.plans, workouts: db.workouts, deleted: db.deleted })), inc);
+}
+
+// pendingImport: { inc, preview, loadImages?(ids), onDone? }
 let pendingImport = null;
 async function readImport(file) {
   let inc;
@@ -1270,34 +1334,310 @@ async function readImport(file) {
     toast('Keine AO-fitlog-Datei. Sicherungen der alten App „AO Trainiert“ passen nicht – verwende die Startdaten-Datei.', { error: true, timeout: 9000 });
     return;
   }
-  const preview = mergeInto(JSON.parse(JSON.stringify({ exercises: db.exercises, plans: db.plans, workouts: db.workouts, deleted: db.deleted })), inc);
-  pendingImport = inc;
+  const when = inc.exportedAt ? ', ' + fmtDate(inc.exportedAt) + ' ' + fmtTime(inc.exportedAt) + ' Uhr' : '';
+  const kind = inc.partial ? `Änderungsdatei${inc.since ? ' (Änderungen seit ' + fmtDate(inc.since) + ', ' + fmtTime(inc.since) + ' Uhr)' : ''}` : 'Vollständige Sicherung';
+  showImportPreview({ inc }, `${kind} von <b>${esc(inc.device || 'unbekannt')}</b>${when}`);
+}
+function showImportPreview(p, sourceHtml) {
+  const preview = previewMerge(p.inc);
+  pendingImport = Object.assign(p, { preview });
   const nothing = !preview.exNew && !preview.exUpd && !preview.plNew && !preview.plUpd && !preview.woNew && !preview.removed;
   const line = (label, a, b) => `<tr><td>${label}</td><td><b>${a}</b> neu</td><td>${b != null ? `<b>${b}</b> aktualisiert` : ''}</td></tr>`;
   openModal(`${modalHead('Import – Vorschau')}
-    <p class="small muted">Datei von: <b>${esc(inc.device || 'unbekannt')}</b>${inc.exportedAt ? ', ' + fmtDate(inc.exportedAt) + ' ' + fmtTime(inc.exportedAt) + ' Uhr' : ''}</p>
+    <p class="small muted">${sourceHtml}</p>
     ${nothing ? '<div class="callout tip">Nichts Neues – deine Daten sind bereits auf diesem Stand.</div>' : `
     <div class="table-wrap" style="margin-top:12px"><table class="tbl"><tbody>
       ${line('Übungen', preview.exNew, preview.exUpd)}${line('Pläne', preview.plNew, preview.plUpd)}${line('Workouts', preview.woNew, null)}
       ${preview.removed ? `<tr><td>Entfernt</td><td colspan="2"><b>${preview.removed}</b> (auf dem anderen Gerät gelöscht)</td></tr>` : ''}
     </tbody></table></div>
     <p class="hint">Bestehende Workouts bleiben erhalten. Bei Übungen und Plänen gewinnt jeweils die zuletzt geänderte Fassung.</p>`}
-    <div class="modal-foot"><button class="btn ghost" data-a="modal-close">${nothing ? 'Schließen' : 'Abbrechen'}</button>${nothing ? '' : '<button class="btn" data-a="import-apply">Übernehmen</button>'}</div>`, { dismiss: true });
+    <div class="modal-foot"><button class="btn ghost" data-a="modal-close">${nothing ? 'Schließen' : 'Abbrechen'}</button>${nothing ? '' : '<button class="btn" data-a="import-apply" id="impApply">Übernehmen</button>'}</div>`, { dismiss: true });
+  if (nothing && p.onDone) p.onDone();
 }
-function applyImport() {
-  const inc = pendingImport;
-  if (!inc) return;
+async function applyImport() {
+  const p = pendingImport;
+  if (!p) return;
+  const inc = p.inc;
+  inc.images = inc.images || {};
+  let missing = 0;
+  if (p.loadImages) {
+    // Bilder erst jetzt laden, nur für Übungen, die wirklich übernommen werden.
+    const need = p.preview.imgIds.filter((id) => { const x = inc.exercises.find((e) => e.id === id); return x && x.hasImg && !inc.images[id]; });
+    const btn = $('#impApply');
+    try {
+      missing = await p.loadImages(need, (i, n) => { if (btn) { btn.disabled = true; btn.textContent = `Bilder laden ${i}/${n} …`; } });
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Übernehmen'; }
+      toast(syncErrText(e), { error: true, timeout: 8000 });
+      return;
+    }
+  }
   const rep = mergeInto(db, inc);
   for (const id of rep.imgIds) {
     const ex = exById(id);
     if (!ex) continue;
-    if (ex.hasImg && inc.images && inc.images[id]) ex.hasImg = setImg(id, inc.images[id]);
+    if (ex.hasImg && inc.images[id]) ex.hasImg = setImg(id, inc.images[id]);
     else if (!ex.hasImg) delImg(id);
   }
   for (const id of Object.keys(db.deleted)) if (!exById(id)) delImg(id);
   pendingImport = null;
-  closeModal(); save(); render();
-  toast(`Import fertig – Übungen: ${rep.exNew + rep.exUpd}, Pläne: ${rep.plNew + rep.plUpd}, Workouts: ${rep.woNew}.`, { timeout: 5000 });
+  closeModal(); save();
+  if (p.onDone) p.onDone();
+  render();
+  toast(`Übernommen – Übungen: ${rep.exNew + rep.exUpd}, Pläne: ${rep.plNew + rep.plUpd}, Workouts: ${rep.woNew}.${missing ? ` ${missing} Bild(er) fehlten.` : ''}`, { timeout: 6000 });
+}
+
+/* ================= 8b Abgleich über GitHub ================= */
+// Ein privates GitHub-Repository dient als Ablage. Aufbau dort:
+//   geraete/<Geräte-ID>.json   – alle Daten eines Geräts ohne Bilder (wird bei jedem Senden ersetzt)
+//   bilder/<Übungs-ID>_<updatedAt>.txt – ein Bild (Data-URL) je Übungsfassung
+// Holen führt die Dateien der anderen Geräte wie einen Import zusammen und lädt nur die nötigen Bilder.
+const SYNC_KEY = 'aofl_sync';
+const SYNC_CHECK_EVERY = 5 * 60000;
+const SYNC_CHUNK = 2500000; // Zeichen Bilddaten je Commit
+function loadSync() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'); } catch (e) { return null; } }
+let sync = loadSync();
+function saveSync() {
+  try { if (sync) localStorage.setItem(SYNC_KEY, JSON.stringify(sync)); else localStorage.removeItem(SYNC_KEY); } catch (e) { /* egal */ }
+}
+function syncReady() { return !!(sync && sync.repo && sync.token); }
+function syncPath() { return `geraete/${sync.id}.json`; }
+function imgPath(ex) { return `bilder/${ex.id}_${ex.updatedAt || 0}.txt`; }
+
+class SyncError extends Error {}
+function syncErrText(e) {
+  if (e instanceof SyncError) return e.message;
+  if (e && e.name === 'TypeError') return 'Keine Verbindung zu GitHub. Bitte Internet prüfen.';
+  return 'Fehler beim Abgleich: ' + ((e && e.message) || e);
+}
+async function gh(path, o = {}) {
+  let res;
+  try {
+    res = await fetch('https://api.github.com' + path, {
+      method: o.method || 'GET', cache: 'no-store',
+      headers: Object.assign({ Authorization: 'Bearer ' + (o.token || sync.token), Accept: 'application/vnd.github+json' }, o.body ? { 'Content-Type': 'application/json' } : {}),
+      body: o.body ? JSON.stringify(o.body) : undefined
+    });
+  } catch (e) { throw new SyncError('Keine Verbindung zu GitHub. Bitte Internet prüfen.'); }
+  if (o.allow && o.allow.includes(res.status)) return { missing: res.status };
+  if (!res.ok) {
+    let msg = '';
+    try { msg = (await res.json()).message || ''; } catch (e) { /* egal */ }
+    if (res.status === 401) throw new SyncError('GitHub lehnt den Schlüssel (Token) ab. Er ist falsch, abgelaufen oder gelöscht. Unter Daten › Abgleich › Einstellungen einen neuen eintragen.');
+    if (res.status === 403 && /rate limit/i.test(msg)) throw new SyncError('GitHub bremst gerade zu viele Anfragen. Bitte in einer Stunde erneut versuchen.');
+    if (res.status === 403) throw new SyncError('Keine Schreibberechtigung. Beim Token muss für das Repository „Contents: Read and write“ erlaubt sein.');
+    if (res.status === 404) throw new SyncError('Repository nicht gefunden. Name prüfen und ob der Token Zugriff auf genau dieses Repository hat.');
+    if (res.status === 422 && o.conflict) throw Object.assign(new SyncError('conflict'), { conflict: true });
+    throw new SyncError(`GitHub meldet Fehler ${res.status}${msg ? ': ' + msg : ''}.`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+function b64ToText(b64) {
+  const bin = atob(String(b64).replace(/\s/g, ''));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function textToB64(s) {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function parseRepo(s) {
+  s = String(s || '').trim().replace(/\.git$/, '').replace(/\/+$/, '');
+  const m = s.match(/(?:github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+  return m ? `${m[1]}/${m[2]}` : '';
+}
+async function repoInfo(repo, token) {
+  const r = await gh(`/repos/${repo}`, { token });
+  if (!r.private) throw new SyncError('Das Repository ist öffentlich. Für deine Trainingsdaten muss es privat sein (auf GitHub: Settings › Change visibility › Private).');
+  if (r.permissions && !r.permissions.push) throw new SyncError('Der Token darf in dieses Repository nicht schreiben. Bei „Contents“ muss „Read and write“ eingestellt sein.');
+  return r;
+}
+const LIESMICH = `# AO fitlog – Datenablage\n\nDieses private Repository speichert die Daten der App AO fitlog für den Abgleich zwischen Geräten.\nBitte hier nichts von Hand ändern.\n\n- \`geraete/\`: je Gerät eine Datei mit Übungen, Plänen und Workouts\n- \`bilder/\`: Übungsbilder\n`;
+// Aktuellen Stand des Repos holen: Branch, letzter Commit und Liste aller Dateien.
+async function syncState() {
+  const R = sync.repo;
+  const info = await repoInfo(R);
+  const br = info.default_branch || 'main';
+  let ref = await gh(`/repos/${R}/git/ref/heads/${encodeURIComponent(br)}`, { allow: [404, 409] });
+  if (ref.missing) {
+    // Leeres Repository: erste Datei anlegen, damit es einen Branch gibt.
+    await gh(`/repos/${R}/contents/LIESMICH.md`, { method: 'PUT', body: { message: 'AO fitlog: Ablage eingerichtet', content: textToB64(LIESMICH) } });
+    ref = await gh(`/repos/${R}/git/ref/heads/${encodeURIComponent(br)}`);
+  }
+  const head = ref.object.sha;
+  const commit = await gh(`/repos/${R}/git/commits/${head}`);
+  const tree = await gh(`/repos/${R}/git/trees/${commit.tree.sha}?recursive=1`);
+  const files = {};
+  for (const t of tree.tree || []) if (t.type === 'blob') files[t.path] = t.sha;
+  return { R, br, head, treeSha: commit.tree.sha, files };
+}
+async function syncCommit(st, entries, msg) {
+  const tree = await gh(`/repos/${st.R}/git/trees`, { method: 'POST', body: { base_tree: st.treeSha, tree: entries } });
+  const c = await gh(`/repos/${st.R}/git/commits`, { method: 'POST', body: { message: msg, tree: tree.sha, parents: [st.head] } });
+  await gh(`/repos/${st.R}/git/refs/heads/${encodeURIComponent(st.br)}`, { method: 'PATCH', body: { sha: c.sha }, conflict: true });
+  st.head = c.sha; st.treeSha = tree.sha;
+}
+async function readBlob(st, sha) {
+  const b = await gh(`/repos/${st.R}/git/blobs/${sha}`);
+  return b64ToText(b.content);
+}
+function otherDeviceFiles(st) {
+  return Object.keys(st.files).filter((p) => /^geraete\/[^/]+\.json$/.test(p) && p !== syncPath());
+}
+
+function setSyncBusy(text) { ui.syncBusy = text; if (ui.tab === 'data') render(); }
+
+async function syncSend() {
+  if (!syncReady() || ui.syncBusy) return;
+  if (!db.device) { toast('Bitte zuerst unter Daten einen Gerätenamen eintragen.', { error: true }); ui.tab = 'data'; render(); return; }
+  closeModal();
+  setSyncBusy('Senden …');
+  try {
+    for (let attempt = 0; ; attempt++) {
+      const st = await syncState();
+      const stamp = `${fmtDate(Date.now())} ${fmtTime(Date.now())}`;
+      // 1. Fehlende Bilder hochladen (in Paketen, damit einzelne Anfragen nicht zu groß werden)
+      let batch = [], size = 0, sent = 0;
+      const todo = db.exercises.filter((ex) => ex.hasImg && !st.files[imgPath(ex)]);
+      for (const ex of todo) {
+        const d = getImg(ex.id);
+        if (!d) continue;
+        batch.push({ path: imgPath(ex), mode: '100644', type: 'blob', content: d });
+        size += d.length;
+        if (size >= SYNC_CHUNK) {
+          sent += batch.length;
+          setSyncBusy(`Bilder senden ${sent}/${todo.length} …`);
+          await syncCommit(st, batch, `${db.device}: Bilder (${stamp})`);
+          batch = []; size = 0;
+        }
+      }
+      // 2. Überholte Bildfassungen entfernen (nur wenn dieses Gerät eine neuere Fassung der Übung kennt oder sie gelöscht ist)
+      const exMap = new Map(db.exercises.map((x) => [x.id, x]));
+      for (const p of Object.keys(st.files)) {
+        const m = p.match(/^bilder\/(.+)_(\d+)\.txt$/);
+        if (!m) continue;
+        const ex = exMap.get(m[1]), v = +m[2], gone = db.deleted[m[1]];
+        if ((ex && (ex.updatedAt || 0) > v) || (!ex && gone && gone >= v)) batch.push({ path: p, mode: '100644', type: 'blob', sha: null });
+      }
+      // 3. Daten dieses Geräts (ohne Bilder) – zuletzt, damit die Bilder schon da sind
+      const data = JSON.parse(buildExport(null, false).json);
+      delete data.images;
+      data.syncId = sync.id;
+      batch.push({ path: syncPath(), mode: '100644', type: 'blob', content: JSON.stringify(data) });
+      setSyncBusy('Daten senden …');
+      try {
+        await syncCommit(st, batch, `${db.device}: Daten gesendet (${stamp})`);
+        break;
+      } catch (e) {
+        // Ein anderes Gerät hat gleichzeitig gesendet: einmal neu aufsetzen.
+        if (!e.conflict || attempt >= 2) throw e.conflict ? new SyncError('Ein anderes Gerät sendet gerade. Bitte gleich noch einmal versuchen.') : e;
+      }
+    }
+    sync.lastSend = Date.now();
+    saveSync();
+    db.meta.sinceExport = 0;
+    save();
+    toast('Gesendet. Das andere Gerät kann die Daten jetzt holen.');
+  } catch (e) {
+    toast(syncErrText(e), { error: true, timeout: 9000 });
+  } finally {
+    setSyncBusy(null);
+    render();
+  }
+}
+
+async function syncFetch() {
+  if (!syncReady() || ui.syncBusy) return;
+  if (db.active) { toast('Bitte zuerst das laufende Workout abschließen oder abbrechen.', { error: true }); return; }
+  setSyncBusy('Holen …');
+  try {
+    const st = await syncState();
+    const paths = otherDeviceFiles(st);
+    if (!paths.length) { toast('Auf GitHub liegen noch keine Daten eines anderen Geräts. Dort zuerst „Senden“ tippen.', { timeout: 7000 }); return; }
+    const inc = emptyInc();
+    const names = [];
+    let newest = 0;
+    for (const p of paths) {
+      let d;
+      try { d = JSON.parse(await readBlob(st, st.files[p])); } catch (e) { continue; }
+      if (!d || d.app !== 'ao-fitlog') continue;
+      mergeInto(inc, d);
+      names.push(`<b>${esc(d.device || 'unbekannt')}</b>${d.exportedAt ? ' (gesendet ' + fmtDate(d.exportedAt) + ', ' + fmtTime(d.exportedAt) + ' Uhr)' : ''}`);
+      newest = Math.max(newest, d.exportedAt || 0);
+    }
+    if (!names.length) { toast('Die Daten auf GitHub sind nicht lesbar.', { error: true }); return; }
+    const seen = {};
+    for (const p of paths) seen[p] = st.files[p];
+    const onDone = () => { sync.seen = seen; sync.lastFetch = Date.now(); saveSync(); ui.syncNews = false; render(); };
+    const loadImages = async (ids, progress) => {
+      let missing = 0, i = 0;
+      for (const id of ids) {
+        progress(++i, ids.length);
+        const ex = inc.exercises.find((e) => e.id === id);
+        const sha = ex && st.files[imgPath(ex)];
+        if (!sha) { missing++; continue; }
+        inc.images[id] = await readBlob(st, sha);
+      }
+      return missing;
+    };
+    showImportPreview({ inc, loadImages, onDone }, `Daten von GitHub: ${names.join(', ')}`);
+  } catch (e) {
+    toast(syncErrText(e), { error: true, timeout: 9000 });
+  } finally {
+    setSyncBusy(null);
+  }
+}
+
+// Beim Öffnen der App leise nachsehen, ob ein anderes Gerät etwas gesendet hat.
+async function syncCheck(force) {
+  if (!syncReady() || ui.syncBusy || !navigator.onLine) return;
+  if (!force && sync.lastCheck && Date.now() - sync.lastCheck < SYNC_CHECK_EVERY) return;
+  sync.lastCheck = Date.now();
+  saveSync();
+  try {
+    const st = await syncState();
+    const seen = sync.seen || {};
+    const news = otherDeviceFiles(st).some((p) => seen[p] !== st.files[p]);
+    if (news !== !!ui.syncNews) { ui.syncNews = news; if (!ui.modal) render(); }
+  } catch (e) { /* still – Fehler zeigt erst Senden/Holen */ }
+}
+
+function syncSetupHtml() {
+  const s = sync || {};
+  return `${modalHead('Abgleich über GitHub einrichten')}
+    <p class="small muted">Du brauchst ein <b>privates</b> Repository auf GitHub und einen Zugangsschlüssel (Token), der nur dieses Repository lesen und schreiben darf. Wie das geht, steht in der Anleitung im Kapitel „Abgleich über GitHub“.</p>
+    <div class="field" style="margin-top:12px"><label for="syRepo">Repository (Benutzername/Name)</label>
+      <input type="text" id="syRepo" value="${esc(s.repo || '')}" placeholder="z. B. maxmuster/fitlog-daten" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="field"><label for="syToken">Token</label>
+      <input type="password" id="syToken" value="${esc(s.token || '')}" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="hint">Der Token bleibt nur auf diesem Gerät gespeichert und ist in keiner Sicherungsdatei enthalten.</div></div>
+    <div class="modal-foot">${syncReady() ? `<button class="btn danger" data-a="sync-off">${ic('trash')}Trennen</button>` : ''}
+      <button class="btn ghost" data-a="modal-close">Abbrechen</button><button class="btn" data-a="sync-save" id="sySave">Prüfen und speichern</button></div>`;
+}
+async function syncSaveSetup() {
+  const repo = parseRepo($('#syRepo').value);
+  const token = $('#syToken').value.trim();
+  if (!repo) { toast('Bitte das Repository als Benutzername/Name angeben.', { error: true }); return; }
+  if (!token) { toast('Bitte den Token einfügen.', { error: true }); return; }
+  const btn = $('#sySave');
+  btn.disabled = true; btn.textContent = 'Prüfe …';
+  try {
+    await repoInfo(repo, token);
+    const changed = !sync || sync.repo !== repo;
+    sync = Object.assign(sync || {}, { repo, token, id: (sync && sync.id) || uid() });
+    if (changed) { sync.seen = {}; sync.lastSend = null; sync.lastFetch = null; }
+    saveSync();
+    closeModal();
+    render();
+    toast('Verbindung zu GitHub steht. Jetzt „Senden“ tippen.', { timeout: 6000 });
+    syncCheck(true);
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Prüfen und speichern';
+    toast(syncErrText(e), { error: true, timeout: 9000 });
+  }
 }
 
 /* ================= 9 CSV-Import (Excel) ================= */
@@ -1487,5 +1827,8 @@ function init() {
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   render();
   initSW();
+  syncCheck(true);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncCheck(false); });
+  window.addEventListener('online', () => syncCheck(true));
 }
 init();

@@ -1,6 +1,6 @@
 // AO fitlog – Service Worker
 // Bei jeder neuen Version VERSION erhöhen, damit Geräte das Update erkennen.
-const VERSION = '1.0.3';
+const VERSION = '1.1.0';
 const CACHE = 'aofl-' + VERSION;
 const ASSETS = [
   './',
@@ -22,7 +22,11 @@ const ASSETS = [
   './anleitung-bilder/05_daten.jpg',
   './anleitung-bilder/06_pc_plan_gesperrt.jpg',
   './anleitung-bilder/07_pc_uebung.jpg',
-  './anleitung-bilder/08_pc_verlauf.jpg'
+  './anleitung-bilder/08_pc_verlauf.jpg',
+  './anleitung-bilder/09_sync_einrichten.jpg',
+  './anleitung-bilder/10_hinweis_holen.jpg',
+  './anleitung-bilder/11_holen_vorschau.jpg',
+  './anleitung-bilder/12_datei_austausch.jpg'
 ];
 
 self.addEventListener('install', (event) => {
