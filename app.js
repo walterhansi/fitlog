@@ -2,11 +2,11 @@
    Daten liegen lokal im Browser (localStorage, Schlüssel "aofl_…").
    Aufbau: 1 Grundlagen · 2 Speicher · 3 Auswertung · 4 Oberfläche · 5 Ansichten
            6 Dialoge · 7 Aktionen · 8 Sicherung/Import · 8b Abgleich über GitHub
-           9 CSV-Import · 10 Start */
+           9 Übungen aus Obsidian · 10 Start */
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -318,7 +318,7 @@ const TABS = [
   { id: 'exercises', label: 'Übungen', icon: 'book' },
   { id: 'data', label: 'Daten', icon: 'sync' }
 ];
-const ui = { tab: 'workout', open: {}, calMonth: null, exQuery: '', showArchive: false, draft: null, csv: null, modal: null };
+const ui = { tab: 'workout', open: {}, calMonth: null, exQuery: '', showArchive: false, draft: null, obs: null, modal: null };
 
 function renderNav() {
   $('#nav').innerHTML = TABS.map((t) =>
@@ -370,7 +370,7 @@ function refreshModal(html) {
   m.innerHTML = html;
   m.scrollTop = st;
 }
-function closeModal() { $('#modal-root').innerHTML = ''; ui.draft = null; ui.csv = null; ui.modal = null; }
+function closeModal() { $('#modal-root').innerHTML = ''; ui.draft = null; ui.obs = null; ui.modal = null; }
 function modalHead(title) {
   return `<div class="modal-head"><h2>${esc(title)}</h2><button class="icon-btn" data-a="modal-close" aria-label="Schließen">${ic('x')}</button></div>`;
 }
@@ -426,11 +426,11 @@ function viewWorkoutHome() {
     h += `<div class="callout tip" style="margin:0 0 14px"><div class="row"><span>Neue Daten von einem anderen Gerät liegen bereit.</span><button class="btn sm" data-a="sync-fetch">Holen</button></div></div>`;
   }
   if (needsBackup()) {
-    h += `<div class="callout note" style="margin:0 0 14px"><div class="row"><span>${db.meta.sinceExport} Workouts noch nicht gesendet oder gesichert.</span><button class="btn sm" data-a="backup">${syncReady() ? 'Senden' : 'Jetzt sichern'}</button></div></div>`;
+    h += `<div class="callout note" style="margin:0 0 14px"><div class="row"><span>${db.meta.sinceExport} Workouts noch nicht gesendet.${syncReady() ? '' : ' Richte den Abgleich über GitHub ein.'}</span><button class="btn sm" data-a="backup">${syncReady() ? 'Senden' : 'Zu den Daten'}</button></div></div>`;
   }
   if (!db.exercises.length) {
-    h += `<div class="card"><h3>Willkommen bei AO fitlog</h3><p class="muted small" style="margin-top:6px">Noch keine Übungen vorhanden. Importiere die Startdaten oder eine Sicherung, oder lege Übungen selbst an.</p>
-      <div class="card-actions"><button class="btn" data-a="tab" data-tab="data">${ic('upload')}Daten importieren</button><button class="btn ghost" data-a="tab" data-tab="exercises">Übungen anlegen</button></div></div>`;
+    h += `<div class="card"><h3>Willkommen bei AO fitlog</h3><p class="muted small" style="margin-top:6px">Noch keine Übungen vorhanden. Richte unter „Daten“ den Abgleich über GitHub ein und tippe „Holen“. Neue Übungen kommen am PC aus Obsidian.</p>
+      <div class="card-actions"><button class="btn" data-a="tab" data-tab="data">${ic('sync')}Zu den Daten</button></div></div>`;
   }
   h += '<div class="section-title">Plan starten</div>';
   if (!plans.length) {
@@ -600,21 +600,23 @@ function viewHistory() {
 }
 
 function viewExercises() {
-  return `<div class="view-inner"><div class="page-head"><h1>Übungen</h1><div class="btn-row">
-    <button class="btn ghost" data-a="csv-open">${ic('upload')}Import</button><button class="btn" data-a="ex-new">${ic('plus')}Neue Übung</button></div></div>
+  return `<div class="view-inner"><div class="page-head"><h1>Übungen</h1>${isPC() ? `<div class="btn-row">
+    <button class="btn" data-a="obs-open">${ic('download')}Aus Obsidian holen</button></div>` : ''}</div>
+    ${isPC() ? '<p class="hint" style="margin:-6px 0 12px">Neue Übungen legst du in Obsidian an: Häkchen „fitlog-Auswahl“ setzen, dann hier „Aus Obsidian holen“ und unter „Daten“ „Senden“.</p>'
+      : '<div class="callout info" style="margin:0 0 12px">Neue Übungen kommen aus Obsidian am PC. Dort „Aus Obsidian holen“ und „Senden“, dann hier unter „Daten“ „Holen“.</div>'}
     <div class="search">${ic('search')}<input type="search" placeholder="Übung suchen" value="${esc(ui.exQuery)}" data-in="ex-q" aria-label="Übung suchen"></div>
     <div id="ex-list">${exerciseList()}</div></div>`;
 }
 function exerciseList() {
   const q = ui.exQuery.trim().toLowerCase();
   const list = db.exercises.filter((e) => !q || e.name.toLowerCase().includes(q)).sort(byName);
-  if (!db.exercises.length) return '<div class="empty">Noch keine Übungen. Lege eine an oder importiere eine Liste.</div>';
+  if (!db.exercises.length) return '<div class="empty">Noch keine Übungen. Am PC: „Aus Obsidian holen“. Am Handy: unter „Daten“ „Holen“.</div>';
   if (!list.length) return '<div class="empty">Keine Übung gefunden.</div>';
   return `<div class="grid cols">${list.map((ex) => {
     const last = lastEntry(ex.id);
     return `<button class="card" style="display:block;width:100%;text-align:left" data-a="ex-edit" data-id="${ex.id}"><div class="card-row">${thumb(ex)}<div class="grow">
       <div class="card-title">${esc(ex.name)}</div>
-      <div class="badges"><span class="badge">${TYPE_LABEL[ex.type]}</span>${ex.perSide ? '<span class="badge">je Seite</span>' : ''}${ex.scored === false ? '<span class="badge">ohne Wertung</span>' : ''}${exUsed(ex.id) ? `<span class="badge">${ic('lock')}Typ fest</span>` : ''}</div>
+      <div class="badges"><span class="badge">${TYPE_LABEL[ex.type]}</span>${ex.obsId ? `<span class="badge lime">${esc(ex.obsId)}</span>` : ''}${ex.perSide ? '<span class="badge">je Seite</span>' : ''}${ex.scored === false ? '<span class="badge">ohne Wertung</span>' : ''}${exUsed(ex.id) ? `<span class="badge">${ic('lock')}Typ fest</span>` : ''}</div>
       <div class="card-sub">${last ? 'zuletzt ' + esc(setsText(ex.type, last.entry.sets)) : 'noch nicht trainiert'}</div></div></div></button>`;
   }).join('')}</div>`;
 }
@@ -624,38 +626,34 @@ function canShareFiles() {
 }
 function syncCardHtml() {
   if (!syncReady()) {
-    return `<div class="card"><h3>Abgleich über GitHub</h3>
-      <p class="small muted" style="margin-top:6px">Der bequemste Weg zwischen Handy und PC: <b>Senden</b> auf dem einen Gerät, <b>Holen</b> auf dem anderen – mit Bildern. Dafür brauchst du ein kostenloses GitHub-Konto (einmalige Einrichtung, siehe Anleitung).</p>
+    return `<div class="card"><h3>Abgleich über GitHub <span class="badge lime">Standardweg</span></h3>
+      <p class="small muted" style="margin-top:6px">So tauschen Handy und PC ihre Daten aus: <b>Senden</b> auf dem einen Gerät, <b>Holen</b> auf dem anderen – mit Bildern. GitHub bewahrt jede gesendete Fassung auf und ist damit zugleich deine Sicherung. Einmal einrichten mit einem kostenlosen GitHub-Konto (siehe Anleitung).</p>
       <div class="card-actions"><button class="btn" data-a="sync-setup">${ic('sync')}Einrichten</button><a class="btn ghost" href="anleitung.html#github" target="_blank" rel="noopener">${ic('help')}So geht's</a></div></div>`;
   }
   const t = (ts) => ts ? `${fmtDate(ts)}, ${fmtTime(ts)} Uhr` : 'noch nie';
   const busy = ui.syncBusy;
-  return `<div class="card"><h3>Abgleich über GitHub</h3>
+  return `<div class="card"><h3>Abgleich über GitHub <span class="badge lime">Standardweg</span></h3>
     <p class="small muted" style="margin-top:6px">Ablage: <b>${esc(sync.repo)}</b><br>Zuletzt gesendet: <b>${t(sync.lastSend)}</b><br>Zuletzt geholt: <b>${t(sync.lastFetch)}</b></p>
     ${ui.syncNews && !busy ? '<div class="callout tip">Ein anderes Gerät hat neue Daten gesendet.</div>' : ''}
     <div class="btn-row" style="margin-top:12px"><button class="btn" data-a="sync-send" ${busy ? 'disabled' : ''}>${ic('upload')}${busy && busy !== 'Holen …' ? esc(busy) : 'Senden'}</button>
       <button class="btn ${ui.syncNews ? 'lime' : 'ghost'}" data-a="sync-fetch" ${busy ? 'disabled' : ''}>${ic('download')}${busy === 'Holen …' ? esc(busy) : 'Holen'}</button></div>
-    <p class="hint"><b>Senden</b> legt alle Daten dieses Geräts samt Bildern auf GitHub ab. <b>Holen</b> übernimmt, was die anderen Geräte gesendet haben – mit Vorschau, nichts wird blind überschrieben.</p>
+    <p class="hint"><b>Senden</b> legt alle Daten dieses Geräts samt Bildern auf GitHub ab – am besten nach jedem Training. <b>Holen</b> übernimmt, was die anderen Geräte gesendet haben – mit Vorschau, nichts wird blind überschrieben.</p>
     <div class="card-actions"><button class="btn sm ghost" data-a="sync-setup" ${busy ? 'disabled' : ''}>Einstellungen</button></div></div>`;
 }
 function viewData() {
   const last = db.meta.lastExport ? `${fmtDate(db.meta.lastExport)}, ${fmtTime(db.meta.lastExport)} Uhr` : 'noch nie';
-  const since = changesSince();
   const share = canShareFiles();
   return `<div class="view-inner narrow"><div class="page-head"><h1>Daten</h1></div>
     <div class="card"><h3>Dieses Gerät</h3><div class="field" style="margin-top:10px;margin-bottom:0"><label for="dev">Gerätename (erscheint im Dateinamen und beim Abgleich)</label>
       <input type="text" id="dev" value="${esc(db.device)}" placeholder="z. B. Handy oder PC" data-c="device"></div></div>
     ${syncCardHtml()}
-    <div class="card"><h3>Austausch per Datei</h3>
-      <div class="label" style="margin-top:12px">Nur Änderungen</div>
-      <p class="small muted">Alles, was seit <b>${since ? `${fmtDate(since)}, ${fmtTime(since)} Uhr` : 'Beginn'}</b> neu oder geändert ist, mit Bildern. Klein und schnell verschickt.</p>
-      <div class="card-actions" style="margin-top:8px">${share ? `<button class="btn" data-a="delta-share">${ic('share')}Änderungen teilen …</button>` : ''}<button class="btn ${share ? 'ghost' : ''}" data-a="delta-file">${ic('download')}Änderungen als Datei</button></div>
-      <div class="label" style="margin-top:16px">Vollständige Sicherung</div>
-      <p class="small muted">Alle Übungen mit Bildern, Pläne und Workouts. Letzte vollständige Sicherung: <b>${last}</b>${db.meta.sinceExport ? ` · seitdem ${db.meta.sinceExport} Workout(s) nicht gesichert` : ''}</p>
+    <div class="card"><h3>Sicherung als Datei <span class="badge orange">nur für Ausnahmen</span></h3>
+      <p class="small muted" style="margin-top:6px">Der normale Weg ist <b>Senden/Holen über GitHub</b>. Die Datei brauchst du nur in Ausnahmefällen: GitHub ist nicht erreichbar, ein neues Gerät ohne Abgleich, oder du möchtest eine Sicherung zusätzlich selbst aufbewahren.</p>
+      <p class="small muted">Alle Übungen mit Bildern, Pläne und Workouts. Letzte Sicherungsdatei: <b>${last}</b></p>
       <div class="card-actions" style="margin-top:8px">${share ? `<button class="btn ghost" data-a="export-share">${ic('share')}Sicherung teilen …</button>` : ''}<button class="btn ghost" data-a="export-file">${ic('download')}Sicherung als Datei</button></div></div>
-    <div class="card"><h3>Datei importieren</h3>
-      <p class="small muted" style="margin-top:6px">Sicherung, Änderungsdatei oder Startdaten einlesen. Die Daten werden zusammengeführt – nichts wird blind überschrieben. Vor dem Übernehmen siehst du eine Vorschau.</p>
-      <div style="margin-top:10px"><input class="file-input" type="file" accept=".json,.txt,application/json,text/plain" data-c="import-file" aria-label="Datei zum Importieren wählen"></div></div>
+    <div class="card"><h3>Sicherung wiederherstellen <span class="badge orange">nur für Ausnahmen</span></h3>
+      <p class="small muted" style="margin-top:6px">Eine Sicherungsdatei einlesen, z. B. wenn GitHub nicht erreichbar ist. Die Daten werden zusammengeführt – nichts wird blind überschrieben, vorhandene Workouts bleiben. Vor dem Übernehmen siehst du eine Vorschau.</p>
+      <div style="margin-top:10px"><input class="file-input" type="file" accept=".json,.txt,application/json,text/plain" data-c="import-file" aria-label="Sicherungsdatei wählen"></div></div>
     <div class="card"><h3>Speicher</h3><p class="small muted" style="margin-top:6px">Belegt: ca. ${storageUsedKB()} KB von etwa 5.000 KB (${Math.round(storageUsedKB() / 50)} %).</p></div>
     <div class="card"><h3>Hilfe</h3><p class="small muted" style="margin-top:6px">AO fitlog Version ${APP_VERSION}</p>
       <div class="card-actions"><a class="btn ghost" href="anleitung.html" target="_blank" rel="noopener">${ic('help')}Anleitung öffnen</a></div></div></div>`;
@@ -681,7 +679,7 @@ function showWorkout(id, justFinished) {
     <p class="hint" style="margin-top:-6px;margin-bottom:10px">Index 100 = dein erstes Training der Übung. Trend = Veränderung zum letzten Training der jeweiligen Übung.</p>
     ${w.notes ? `<div class="callout info" style="margin-bottom:10px">${esc(w.notes)}</div>` : ''}
     <div>${rows || '<p class="muted small">Keine Übungen erfasst.</p>'}</div>
-    <div class="modal-foot">${justFinished && syncReady() ? `<button class="btn" data-a="backup">${ic('upload')}Senden</button>` : justFinished && needsBackup() ? `<button class="btn" data-a="backup">${ic('share')}Jetzt sichern</button>` : ''}
+    <div class="modal-foot">${justFinished && syncReady() ? `<button class="btn" data-a="backup">${ic('upload')}Senden</button>` : justFinished && needsBackup() ? `<button class="btn" data-a="backup">${ic('sync')}Zu den Daten</button>` : ''}
       ${!justFinished ? `<button class="btn danger" data-a="wo-del" data-id="${w.id}">${ic('trash')}Löschen</button>` : ''}
       <button class="btn ghost" data-a="modal-close">Schließen</button></div>`;
   openModal(html, { dismiss: true });
@@ -752,11 +750,13 @@ function bindPlanDnD() {
 function exEditorHtml() {
   const d = ui.draft;
   const stepLabel = d.type === 'weight' ? 'Steigerung Gewicht (kg)' : d.type === 'time' ? 'Steigerung (Sekunden)' : 'Steigerung (Wdh)';
-  let h = modalHead(d.id ? 'Übung bearbeiten' : 'Neue Übung');
-  h += `<div class="field"><label for="xn">Name</label><input type="text" id="xn" value="${esc(d.name)}" data-in="xd" data-f="name" placeholder="z. B. Goblet Squat"></div>
-    <div class="row2"><div class="field"><label for="xt">Typ</label><select id="xt" data-c="xd-type" ${d.typeLocked ? 'disabled' : ''}>
+  const L = !!d.obsId;
+  let h = modalHead('Übung bearbeiten');
+  if (L) h += `<div class="callout info" style="margin:0 0 12px">Aus Obsidian (<b>${esc(d.obsId)}</b>). Name, Beschreibung, Bild und Link änderst du in Obsidian, danach am PC „Aus Obsidian holen“. Hier stellst du die Trainingswerte und den Kommentar ein.</div>`;
+  h += `<div class="field"><label for="xn">Name</label><input type="text" id="xn" value="${esc(d.name)}" data-in="xd" data-f="name" placeholder="z. B. Goblet Squat" ${L ? 'readonly' : ''}></div>
+    <div class="row2"><div class="field"><label for="xt">Typ</label><select id="xt" data-c="xd-type" ${d.typeLocked || L ? 'disabled' : ''}>
       ${Object.keys(TYPE_LABEL).map((t) => `<option value="${t}" ${d.type === t ? 'selected' : ''}>${TYPE_LABEL[t]}</option>`).join('')}</select>
-      ${d.typeLocked ? '<p class="hint">Fest, weil bereits trainiert.</p>' : ''}</div>
+      ${d.typeLocked ? '<p class="hint">Fest, weil bereits trainiert.</p>' : L ? '<p class="hint">Messart kommt aus Obsidian.</p>' : ''}</div>
       <div class="field"><label for="xs">${stepLabel}</label><input type="text" inputmode="decimal" id="xs" value="${fmt(d.step)}" data-in="xd" data-f="step"><p class="hint">Größe eines Steigerungsschritts im Vorschlag.</p></div></div>`;
   if (d.type === 'weight') {
     h += `<div class="row2"><div class="field"><label for="xmin">Wdh-Bereich von</label><input type="text" inputmode="numeric" id="xmin" value="${d.repMin}" data-in="xd" data-f="repMin"></div>
@@ -765,23 +765,25 @@ function exEditorHtml() {
   }
   h += `<label class="check"><input type="checkbox" data-c="xd-check" data-f="perSide" ${d.perSide ? 'checked' : ''}> Je Seite (einseitige Übung)</label>
     <label class="check"><input type="checkbox" data-c="xd-check" data-f="scored" ${d.scored ? 'checked' : ''}> Zählt zum Score <span class="faint small">(aus für Mobilisation)</span></label>
-    <div class="field" style="margin-top:10px"><div class="label">Bild</div><div class="img-drop" id="imgDrop">
+    <div class="field" style="margin-top:10px"><div class="label">Bild</div>${L
+      ? (d.img ? `<img class="ex-img" src="${d.img}" alt="" data-a="zoom-draft" style="max-height:220px">` : '<p class="hint">Kein Bild in Obsidian.</p>')
+      : `<div class="img-drop" id="imgDrop">
       ${d.img ? `<img src="${d.img}" alt="" data-a="zoom-draft">` : ''}
       <div>Bild mit <b>Strg+V</b> einfügen, hierher ziehen oder auswählen</div>
       <div class="btn-row" style="justify-content:center;margin-top:10px"><label class="btn sm ghost" style="flex:0">${ic('image')}Datei wählen<input type="file" accept="image/*" data-c="xd-img" hidden></label>
-      ${d.img ? `<button class="btn sm danger" style="flex:0" data-a="xd-img-del">${ic('trash')}Entfernen</button>` : ''}</div></div></div>
-    <div class="field"><label for="xd">Beschreibung / Technik</label><textarea id="xd" rows="4" data-in="xd" data-f="desc">${esc(d.desc)}</textarea></div>
+      ${d.img ? `<button class="btn sm danger" style="flex:0" data-a="xd-img-del">${ic('trash')}Entfernen</button>` : ''}</div></div>`}</div>
+    <div class="field"><label for="xd">Beschreibung / Technik</label><textarea id="xd" rows="4" data-in="xd" data-f="desc" ${L ? 'readonly' : ''}>${esc(d.desc)}</textarea></div>
     <div class="field"><label for="xc">Kommentar / Einstellung</label><textarea id="xc" rows="2" data-in="xd" data-f="comment" placeholder="z. B. Sitzhöhe 3">${esc(d.comment)}</textarea><p class="hint">Wird im Training immer sichtbar angezeigt.</p></div>
-    <div class="field"><label for="xu">Link (z. B. Video)</label><input type="url" id="xu" value="${esc(d.url)}" data-in="xd" data-f="url" placeholder="https://"></div>
+    <div class="field"><label for="xu">Link (z. B. Video)</label><input type="url" id="xu" value="${esc(d.url)}" data-in="xd" data-f="url" placeholder="${L ? '' : 'https://'}" ${L ? 'readonly' : ''}></div>
     <div class="modal-foot">${d.id ? `<button class="btn danger" data-a="ex-del" data-id="${d.id}">${ic('trash')}</button>` : ''}<button class="btn ghost" data-a="modal-close">Abbrechen</button><button class="btn" data-a="ex-save">Speichern</button></div>`;
   return h;
 }
 function openExEditor(ex) {
-  ui.draft = ex
-    ? { kind: 'ex', id: ex.id, name: ex.name, type: ex.type, perSide: !!ex.perSide, scored: ex.scored !== false, repMin: ex.repMin || 8, repMax: ex.repMax || 12,
+  // Neue Übungen gibt es nur noch aus Obsidian (am PC „Aus Obsidian holen“).
+  if (!ex) return;
+  ui.draft = { kind: 'ex', id: ex.id, obsId: ex.obsId || '', name: ex.name, type: ex.type, perSide: !!ex.perSide, scored: ex.scored !== false, repMin: ex.repMin || 8, repMax: ex.repMax || 12,
       step: +ex.step > 0 ? +ex.step : DEFAULT_STEP[ex.type], desc: ex.desc || '', comment: ex.comment || '', url: ex.url || '',
-      img: ex.hasImg ? getImg(ex.id) : null, imgChanged: false, typeLocked: exUsed(ex.id) }
-    : { kind: 'ex', id: null, name: '', type: 'weight', perSide: false, scored: true, repMin: 8, repMax: 12, step: DEFAULT_STEP.weight, desc: '', comment: '', url: '', img: null, imgChanged: false, typeLocked: false };
+      img: ex.hasImg ? getImg(ex.id) : null, imgChanged: false, typeLocked: exUsed(ex.id) };
   openModal(exEditorHtml());
   bindImgDrop();
 }
@@ -1114,11 +1116,16 @@ const ACTIONS = {
   },
 
   // Übungen
-  'ex-new': () => openExEditor(null),
   'ex-edit': (el) => { const ex = exById(el.dataset.id); if (ex) openExEditor(ex); },
   'xd-img-del': () => { ui.draft.img = null; ui.draft.imgChanged = true; refreshExEditor(); },
   'ex-save': () => {
     const d = ui.draft;
+    const ex0 = exById(d.id);
+    if (!ex0) { closeModal(); return; }
+    if (ex0.obsId) {
+      // Verbunden mit Obsidian: nur Trainingswerte und Kommentar sind hier änderbar.
+      d.name = ex0.name; d.desc = ex0.desc || ''; d.url = ex0.url || ''; d.type = ex0.type; d.imgChanged = false;
+    }
     const name = d.name.trim();
     if (!name) { toast('Bitte einen Namen eingeben.', { error: true }); return; }
     if (nameTaken(db.exercises, name, d.id)) { toast('Es gibt bereits eine Übung mit diesem Namen.', { error: true }); return; }
@@ -1126,8 +1133,7 @@ const ACTIONS = {
     if (repMin > repMax) [repMin, repMax] = [repMax, repMin];
     const step = num(d.step) > 0 ? r2(num(d.step)) : DEFAULT_STEP[d.type];
     const now = Date.now();
-    let ex = d.id ? exById(d.id) : null;
-    if (!ex) { ex = { id: uid(), createdAt: now, hasImg: false }; db.exercises.push(ex); }
+    const ex = ex0;
     Object.assign(ex, {
       name, type: d.typeLocked ? ex.type : d.type, perSide: !!d.perSide, scored: !!d.scored, repMin, repMax, step,
       desc: d.desc.trim(), comment: d.comment.trim(), url: d.url.trim(), updatedAt: now
@@ -1146,6 +1152,8 @@ const ACTIONS = {
       return;
     }
     if (db.active && db.active.entries.some((e) => e.exId === id)) { toast('Übung ist im laufenden Workout.', { error: true }); return; }
+    const exd = exById(id);
+    if (exd && exd.obsId && !confirm(`„${exd.name}“ nur aus fitlog löschen? In Obsidian bleibt die Übung erhalten.\n\nEntferne dort das Häkchen „fitlog-Auswahl“ (${exd.obsId}), sonst kommt sie beim nächsten „Aus Obsidian holen“ wieder.`)) return;
     closeModal();
     withUndo('Übung gelöscht.', () => {
       db.exercises = db.exercises.filter((x) => x.id !== id);
@@ -1154,11 +1162,14 @@ const ACTIONS = {
   },
 
   // Daten
-  backup: () => { closeModal(); if (syncReady()) syncSend(); else if (canShareFiles()) exportShare(); else exportFile(); },
+  backup: () => {
+    closeModal();
+    if (syncReady()) { syncSend(); return; }
+    ui.tab = 'data'; render();
+    toast('Richte den Abgleich über GitHub ein – das ist der Standardweg. Nur ausnahmsweise: „Sicherung als Datei“.', { timeout: 8000 });
+  },
   'export-share': () => exportShare(false),
   'export-file': () => exportFile(false),
-  'delta-share': () => exportShare(true),
-  'delta-file': () => exportFile(true),
   'sync-setup': () => openModal(syncSetupHtml(), { dismiss: true }),
   'sync-save': () => syncSaveSetup(),
   'sync-off': () => {
@@ -1169,9 +1180,9 @@ const ACTIONS = {
   'sync-fetch': () => syncFetch(),
   'import-apply': () => applyImport(),
 
-  // CSV
-  'csv-open': () => { ui.csv = null; openModal(csvHtml(), { wide: true }); },
-  'csv-apply': () => applyCsv(),
+  // Obsidian
+  'obs-open': () => obsStart(),
+  'obs-apply': () => obsApply(),
 
   'sw-update': () => {
     ui.updateRequested = true;
@@ -1211,8 +1222,7 @@ const CHANGES = {
   'xd-check': (el) => { ui.draft[el.dataset.f] = el.checked; },
   'xd-img': (el) => { const f = el.files && el.files[0]; if (f) takeDraftImage(f); },
   device: (el) => { db.device = el.value.trim(); save(); },
-  'import-file': (el) => { const f = el.files && el.files[0]; el.value = ''; if (f) readImport(f); },
-  'csv-files': (el) => { const files = [...(el.files || [])]; el.value = ''; if (files.length) readCsv(files); }
+  'import-file': (el) => { const f = el.files && el.files[0]; el.value = ''; if (f) readImport(f); }
 };
 
 const INPUTS = {
@@ -1260,9 +1270,8 @@ function markExported(partial) {
   save(); render();
 }
 function exportPrepare(partial) {
-  const out = buildExport(partial ? changesSince() : null);
-  if (partial && !out.count) { toast('Seit der letzten Datei gibt es keine Änderungen.'); return null; }
-  return out;
+  // Nur noch vollständige Sicherungen (die Datei „Nur Änderungen“ gibt es nicht mehr).
+  return buildExport(null);
 }
 async function exportShare(partial = false) {
   const out = exportPrepare(partial);
@@ -1331,7 +1340,7 @@ async function readImport(file) {
   let inc;
   try { inc = JSON.parse(await file.text()); } catch (e) { toast('Die Datei ist keine gültige Sicherung.', { error: true }); return; }
   if (!inc || inc.app !== 'ao-fitlog') {
-    toast('Keine AO-fitlog-Datei. Sicherungen der alten App „AO Trainiert“ passen nicht – verwende die Startdaten-Datei.', { error: true, timeout: 9000 });
+    toast('Keine AO-fitlog-Sicherung. Bitte eine Datei wählen, die mit „Sicherung als Datei“ gespeichert wurde.', { error: true, timeout: 9000 });
     return;
   }
   const when = inc.exportedAt ? ', ' + fmtDate(inc.exportedAt) + ' ' + fmtTime(inc.exportedAt) + ' Uhr' : '';
@@ -1640,130 +1649,314 @@ async function syncSaveSetup() {
   }
 }
 
-/* ================= 9 CSV-Import (Excel) ================= */
-const CSV_COLS = {
-  name: ['name', 'uebung', 'uebungsname'],
-  type: ['typ', 'type', 'art'],
-  desc: ['beschreibung', 'technik', 'beschreibungtechnik', 'ausfuehrung'],
-  comment: ['kommentar', 'einstellung', 'einstellungen', 'kommentareinstellung'],
-  url: ['link', 'url', 'quelle', 'video'],
-  perSide: ['jeseite', 'proseite', 'einseitig'],
-  scored: ['zaehltzumscore', 'score', 'wertung'],
-  repMin: ['wdhvon', 'wdhmin', 'wdhbereichvon'],
-  repMax: ['wdhbis', 'wdhmax', 'wdhbereichbis'],
-  step: ['schritt', 'steigerung', 'steigerungsschritt'],
-  img: ['bild', 'bilddatei', 'foto']
-};
-function parseCSV(text) {
-  text = text.replace(/^﻿/, '');
-  const first = text.split(/\r?\n/)[0] || '';
-  const delim = first.split(';').length >= first.split(',').length ? ';' : ',';
-  const rows = [];
-  let row = [], field = '', q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (q) {
-      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; } else field += c;
-    } else if (c === '"') q = true;
-    else if (c === delim) { row.push(field); field = ''; }
-    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
-    else if (c !== '\r') field += c;
-  }
-  if (field !== '' || row.length) { row.push(field); rows.push(row); }
-  return rows;
+/* ================= 9 Übungen aus Obsidian (nur am PC) ================= */
+// Obsidian ist die Quelle für Name, Beschreibung, Bild und Link (und die Messart beim ersten Holen).
+// fitlog behält Trainingswerte (Wdh-Bereich, Steigerung, je Seite, Score) und den Kommentar.
+// Im Obsidian-Ordner wird nur gelesen. Beim Holen wird nie etwas gelöscht; Workouts, Verlauf und Pläne bleiben unberührt.
+const OBS_TYPE = { gewicht: 'weight', koerpergewicht: 'bodyweight', zeit: 'time' };
+const STORAGE_LIMIT = 4900000; // Zeichen; Chrome erlaubt je Website ca. 5 Mio.
+function isPC() { return typeof window.showDirectoryPicker === 'function' && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+function obsScalar(v) {
+  v = String(v).trim();
+  if (v === '') return null;
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (v.startsWith('"') && v.endsWith('"')) { try { return JSON.parse(v); } catch (e) { return v.slice(1, -1); } }
+  if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1).replace(/''/g, "'");
+  return v;
 }
-function parseType(v) {
-  const n = norm(v);
-  if (['gewicht', 'weight', 'hantel', 'zusatzgewicht'].includes(n)) return 'weight';
-  if (['koerpergewicht', 'bodyweight', 'kw', 'eigengewicht', 'bw', 'wdh', 'wiederholungen'].includes(n)) return 'bodyweight';
-  if (['zeit', 'time', 'sek', 'sekunden', 's', 'dauer'].includes(n)) return 'time';
-  return null;
-}
-function yesNo(v, def) {
-  const n = norm(v);
-  if (!n) return def;
-  if (['ja', 'j', 'x', '1', 'true', 'yes', 'y', 'wahr'].includes(n)) return true;
-  if (['nein', 'n', '0', 'false', 'no', 'falsch'].includes(n)) return false;
-  return def;
-}
-function csvHtml() {
-  const c = ui.csv;
-  let h = modalHead('Übungen importieren (Excel/CSV)');
-  h += `<div class="callout info" style="margin-top:0"><b>So geht's:</b> Excel-Vorlage ausfüllen → <i>Datei › Speichern unter › CSV UTF-8</i> → hier die CSV-Datei <b>zusammen mit den Bildern</b> auswählen (im Ordner Strg+A).</div>
-    <div style="margin-top:12px"><input class="file-input" type="file" multiple accept=".csv,text/csv,image/*" data-c="csv-files" aria-label="CSV und Bilder wählen"></div>`;
-  if (c) {
-    if (c.error) h += `<div class="callout warn">${esc(c.error)}</div>`;
-    else {
-      const ok = c.rows.filter((r) => r.ok).length;
-      h += `<div class="section-title">Vorschau – ${ok} von ${c.rows.length} werden importiert</div><div class="table-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Typ</th><th>Bild</th><th>Status</th></tr></thead><tbody>
-        ${c.rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${r.type ? TYPE_LABEL[r.type] : '–'}</td><td>${r.file ? '✓' : r.imgName ? '<span class="red">fehlt</span>' : '–'}</td><td class="${r.ok ? 'lime' : 'red'}">${esc(r.status)}</td></tr>`).join('')}
-        </tbody></table></div>`;
+function obsParse(text) {
+  text = String(text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  if (!text.startsWith('---\n')) return [{}, text];
+  const end = text.indexOf('\n---', 3);
+  if (end < 0) return [{}, text];
+  const fm = {};
+  let cur = null;
+  for (const line of text.slice(4, end).split('\n')) {
+    const m = line.match(/^([^\s:#][^:]*):\s*(.*)$/);
+    if (m && !line.startsWith(' ')) {
+      cur = m[1].trim();
+      const v = m[2].trim();
+      if (v === '[]') fm[cur] = [];
+      else if (v.startsWith('[') && v.endsWith(']')) fm[cur] = v.slice(1, -1).split(',').map(obsScalar).filter((x) => x != null && x !== '');
+      else fm[cur] = obsScalar(v);
+      continue;
+    }
+    const li = line.match(/^\s+-\s+(.*)$/);
+    if (li && cur) {
+      if (!Array.isArray(fm[cur])) fm[cur] = [];
+      const val = obsScalar(li[1]);
+      if (val != null && val !== '') fm[cur].push(val);
     }
   }
-  const ok = c && !c.error ? c.rows.filter((r) => r.ok).length : 0;
-  h += `<div class="modal-foot"><button class="btn ghost" data-a="modal-close">Abbrechen</button><button class="btn" data-a="csv-apply" ${ok ? '' : 'disabled'}>${ok ? ok + ' Übungen importieren' : 'Importieren'}</button></div>`;
+  const after = text.indexOf('\n', end + 4);
+  return [fm, after < 0 ? '' : text.slice(after + 1)];
+}
+function obsSections(body) {
+  const out = {};
+  let name = '_', buf = [];
+  for (const line of body.split('\n')) {
+    const m = line.match(/^## +(.+)$/);
+    if (m) { out[name] = buf.join('\n'); name = m[1].trim(); buf = []; } else buf.push(line);
+  }
+  out[name] = buf.join('\n');
+  return out;
+}
+function obsSec(secs, re) { const k = Object.keys(secs).find((n) => re.test(n)); return k ? secs[k] : ''; }
+function obsClean(s) {
+  return String(s || '')
+    .replace(/!\[[^\]]*\]\((?:[^()\s]|\([^()]*\))*\)/g, '')
+    .replace(/!\[\[[^\]]*\]\]/g, '')
+    .replace(/\[([^\]]+)\]\((?:[^()]|\([^()]*\))*\)/g, '$1')
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/^>\s?/gm, '')
+    .replace(/[ \t]+/g, ' ')
+    .split('\n').map((l) => l.trim()).join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+// Text eines Abschnitts für fitlog: Listenpunkte werden zu eigenen Absätzen, sonst bleibt der Text, wie er ist.
+function obsText(sec) {
+  sec = String(sec || '').split('\n').filter((l) => !/^\s*(\||###)/.test(l)).join('\n');
+  if (!/^\s*(?:\d+[.)]|[-*+])\s+/m.test(sec)) return obsClean(sec);
+  const parts = [];
+  for (const line of sec.split('\n')) {
+    const m = line.match(/^\s*(\d+[.)]|[-*+])\s+(.*)$/);
+    const txt = obsClean(m ? m[2] : line);
+    if (!txt) continue;
+    parts.push(m ? (/\d/.test(m[1]) ? m[1].replace(')', '.') + ' ' : '• ') + txt : txt);
+  }
+  return parts.join('\n\n');
+}
+function obsDesc(secs) {
+  const kurz = obsText(obsSec(secs, /^Kurzbeschreibung/i));
+  let main = obsText(obsSec(secs, /^Ausführung/i));
+  if (!main) main = obsText(obsSec(secs, /^Kurzanweisungen/i));
+  return [kurz, main].filter(Boolean).join('\n\n');
+}
+function obsUrl(fm, secs) {
+  const re = /https?:\/\/[^\s)>\]"']+/;
+  const m = obsSec(secs, /^Quellen/i).match(re);
+  if (m) return m[0];
+  for (const q of [].concat(fm.quellen || [])) { const x = String(q).match(re); if (x) return x[0]; }
+  return '';
+}
+function obsImgRef(secs, body) {
+  const find = (text) => {
+    const md = String(text || '').match(/!\[[^\]]*\]\(((?:[^()\s]|\([^()]*\))+)\)/);
+    if (md) {
+      let p = md[1].split('|')[0];
+      if (/^https?:/i.test(p)) return null; // Bilder aus dem Internet werden nicht geladen
+      try { p = decodeURIComponent(p); } catch (e) { /* bleibt */ }
+      return p.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '');
+    }
+    const wl = String(text || '').match(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/);
+    if (wl) return wl[1].includes('/') ? wl[1] : 'Medien/' + wl[1];
+    return null;
+  };
+  return find(obsSec(secs, /^Bilder/i)) || find(body);
+}
+const nfc = (s) => String(s).normalize('NFC');
+async function obsChild(dir, name, kind) {
+  for await (const [n, h] of dir.entries()) if (h.kind === kind && nfc(n) === nfc(name)) return h;
+  return null;
+}
+async function obsFile(root, path) {
+  const parts = path.split('/').filter(Boolean);
+  let dir = root;
+  for (let i = 0; i < parts.length - 1; i++) { dir = await obsChild(dir, parts[i], 'directory'); if (!dir) return null; }
+  const fh = await obsChild(dir, parts[parts.length - 1], 'file');
+  return fh ? fh.getFile() : null;
+}
+
+function obsBusy(text) { openModal(`${modalHead('Übungen aus Obsidian holen')}<p class="muted">${esc(text)}</p>`); }
+
+async function obsStart() {
+  if (!isPC()) { toast('Das geht nur am PC (Chrome oder Edge).', { error: true }); return; }
+  if (db.active) { toast('Bitte zuerst das laufende Workout abschließen oder abbrechen.', { error: true }); return; }
+  let root;
+  try { root = await window.showDirectoryPicker({ id: 'aofl-obsidian', mode: 'read' }); } catch (e) {
+    if (e && e.name !== 'AbortError') toast('Ordner konnte nicht geöffnet werden.', { error: true });
+    return;
+  }
+  // Erst den neuesten Stand der anderen Geräte haben, sonst würde eine alte Fassung hier die neuere dort überschreiben.
+  if (syncReady()) {
+    obsBusy('Prüfe, ob ein anderes Gerät neue Daten gesendet hat …');
+    try {
+      const st = await syncState();
+      const seen = sync.seen || {};
+      if (otherDeviceFiles(st).some((p) => seen[p] !== st.files[p])) {
+        ui.syncNews = true;
+        openModal(`${modalHead('Erst „Holen“')}<div class="callout note" style="margin-top:0">Ein anderes Gerät hat neue Daten gesendet. Bitte zuerst <b>Holen</b>, dann noch einmal „Aus Obsidian holen“. So geht nichts verloren.</div>
+          <div class="modal-foot"><button class="btn ghost" data-a="modal-close">Schließen</button><button class="btn" data-a="sync-fetch">${ic('download')}Jetzt holen</button></div>`, { dismiss: true });
+        return;
+      }
+    } catch (e) {
+      closeModal();
+      if (!confirm('GitHub ist gerade nicht erreichbar, daher ist unklar, ob ein anderes Gerät neuere Daten hat.\n\nNur fortfahren, wenn dieses Gerät auf dem neuesten Stand ist. Trotzdem fortfahren?')) return;
+    }
+  }
+  obsBusy('Lese Übungen …');
+  try {
+    const dir = await obsChild(root, 'Übungen', 'directory');
+    if (!dir) { closeModal(); toast('Im gewählten Ordner fehlt der Unterordner „Übungen“. Bitte den Ordner „master exercise db obsidian“ wählen.', { error: true, timeout: 9000 }); return; }
+    ui.obs = await obsPlan(root, dir);
+    openModal(obsPreviewHtml(), { wide: true, dismiss: true });
+  } catch (e) {
+    closeModal();
+    toast('Lesen fehlgeschlagen: ' + (e && e.message ? e.message : e), { error: true, timeout: 9000 });
+  }
+}
+
+async function obsPlan(root, dir) {
+  const byId = new Map(db.exercises.map((e) => [e.id, e]));
+  const byObs = new Map(db.exercises.filter((e) => e.obsId).map((e) => [e.obsId, e]));
+  const claimed = new Set();
+  const names = new Map(db.exercises.map((e) => [e.name.trim().toLowerCase(), e.id]));
+  const P = { add: [], upd: [], warn: [], skip: [], keepNoTick: 0, read: 0, imgDelta: 0 };
+  const notes = [];
+  for await (const [fname, h] of dir.entries()) if (h.kind === 'file' && /\.md$/i.test(fname)) notes.push([nfc(fname), h]);
+  notes.sort((a, b) => a[0].localeCompare(b[0], 'de'));
+  for (const [fname, h] of notes) {
+    const text = await (await h.getFile()).text();
+    P.read++;
+    const [fm, body] = obsParse(text);
+    const obsId = String(fm.id || '').trim();
+    const fid = fm.fitlog_id == null ? '' : String(fm.fitlog_id).trim();
+    const tick = fm.fitlog_auswahl === true;
+    let ex = (obsId && byObs.get(obsId)) || (fid && byId.get(fid)) || null;
+    if (!ex && !tick && !fid) continue;
+    const label = `${fm.name || fname.replace(/\.md$/i, '')}${obsId ? ' (' + obsId + ')' : ''}`;
+    if (!obsId) { P.skip.push(`${label}: keine id in Obsidian`); continue; }
+    if (!ex && fid) {
+      P.skip.push(db.deleted[fid] ? `${label}: in fitlog gelöscht – in Obsidian das Häkchen „fitlog-Auswahl“ entfernen` : `${label}: diese Übung fehlt auf diesem Gerät – erst „Holen“`);
+      continue;
+    }
+    if (ex && ex.obsId && ex.obsId !== obsId) { P.warn.push(`${label}: fitlog-Übung ist schon mit ${ex.obsId} verbunden – übersprungen`); continue; }
+    if (ex && claimed.has(ex.id)) { P.warn.push(`${label}: zweite Notiz für dieselbe fitlog-Übung – übersprungen`); continue; }
+    if (ex && !tick) P.keepNoTick++;
+    const secs = obsSections(body);
+    const name = String(fm.name || fname.replace(/\.md$/i, '')).trim();
+    const type = OBS_TYPE[norm(fm.messart)] || null;
+    if (!ex) {
+      if (!type) { P.skip.push(`${label}: Messart fehlt (Gewicht, Körpergewicht oder Zeit)`); continue; }
+      if (names.has(name.toLowerCase())) { P.skip.push(`${label}: Name gibt es in fitlog schon`); continue; }
+    }
+    const desc = obsDesc(secs);
+    const url = obsUrl(fm, secs);
+    const ref = obsImgRef(secs, body);
+    let file = null;
+    if (ref) { try { file = await obsFile(root, ref); } catch (e) { file = null; } }
+    if (ref && !file) P.warn.push(`${label}: Bild „${ref}“ nicht gefunden`);
+    const sig = file ? `${ref}|${file.size}|${file.lastModified}` : '';
+    const loadImg = async () => { try { return await downscale(file); } catch (e) { P.warn.push(`${label}: Bild nicht lesbar`); return null; } };
+
+    if (!ex) {
+      // Neu in fitlog
+      names.set(name.toLowerCase(), 'neu');
+      let repMin = Math.max(1, Math.round(num(fm.fitlog_wdh_min)) || 8), repMax = Math.max(1, Math.round(num(fm.fitlog_wdh_max)) || 12);
+      if (repMin > repMax) [repMin, repMax] = [repMax, repMin];
+      const img = file ? await loadImg() : null;
+      if (img) P.imgDelta += img.length;
+      P.add.push({ obsId, name, type, perSide: fm.je_seite === true, scored: fm.fitlog_score !== false, repMin, repMax,
+        step: num(fm.fitlog_schritt) > 0 ? r2(num(fm.fitlog_schritt)) : DEFAULT_STEP[type], desc, url, img, sig: img ? sig : '' });
+      continue;
+    }
+    claimed.add(ex.id);
+    const u = { id: ex.id, label, fields: {}, what: [], img: undefined };
+    if (ex.obsId !== obsId) { u.fields.obsId = obsId; u.what.push('verbunden'); }
+    if (name !== ex.name) {
+      const other = names.get(name.toLowerCase());
+      if (other && other !== ex.id) P.warn.push(`${label}: Name „${name}“ gibt es in fitlog schon – Name bleibt „${ex.name}“`);
+      else { u.fields.name = name; u.what.push('Name'); names.set(name.toLowerCase(), ex.id); }
+    }
+    if (desc !== (ex.desc || '')) { u.fields.desc = desc; u.what.push('Beschreibung'); }
+    if (url !== (ex.url || '')) { u.fields.url = url; u.what.push('Link'); }
+    if (ex.obsImg === undefined && ex.hasImg) {
+      // Erstes Verbinden: vorhandenes fitlog-Bild bleibt, ab jetzt zählt das Obsidian-Bild.
+      u.fields.obsImg = sig;
+    } else if ((ex.obsImg || '') !== sig || (sig && !ex.hasImg)) {
+      if (sig) {
+        const img = await loadImg();
+        if (img) { u.img = img; u.fields.obsImg = sig; u.what.push('Bild'); P.imgDelta += img.length - ((ex.hasImg && getImg(ex.id)) || '').length; }
+      } else if (ex.hasImg) {
+        u.img = null; u.fields.obsImg = ''; u.what.push('Bild entfernt'); P.imgDelta -= (getImg(ex.id) || '').length;
+      } else u.fields.obsImg = '';
+    }
+    if (type && type !== ex.type) {
+      if (exUsed(ex.id)) P.warn.push(`${label}: Messart in Obsidian ist „${TYPE_LABEL[type]}“, in fitlog „${TYPE_LABEL[ex.type]}“ – bleibt so, weil schon trainiert`);
+      else { u.fields.type = type; u.what.push('Messart'); }
+    }
+    if (Object.keys(u.fields).length || u.img !== undefined) P.upd.push(u);
+  }
+  P.tooBig = storageUsedKB() * 1024 + P.imgDelta + 4000 * (P.add.length + 1) > STORAGE_LIMIT;
+  return P;
+}
+
+function obsPreviewHtml() {
+  const P = ui.obs;
+  const shown = (u) => u.what.length ? u.what.join(', ') : 'Bild-Zuordnung';
+  const list = (items) => `<ul class="small" style="margin:6px 0 0 18px">${items.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+  const nothing = !P.add.length && !P.upd.length;
+  let h = modalHead('Übungen aus Obsidian – Vorschau');
+  h += `<p class="small muted" style="margin-top:0">${P.read} Notizen gelesen. In Obsidian wird nichts geändert.</p>`;
+  if (P.add.length) h += `<div class="section-title">Neu in fitlog (${P.add.length})</div>${list(P.add.map((a) => `<b>${esc(a.name)}</b> <span class="faint">(${esc(a.obsId)}, ${TYPE_LABEL[a.type]}${a.img ? ', mit Bild' : ''})</span>`))}`;
+  if (P.upd.length) h += `<div class="section-title">Aktualisiert (${P.upd.length})</div>${list(P.upd.map((u) => `${esc(u.label)}: <span class="faint">${esc(shown(u))}</span>`))}`;
+  if (P.warn.length) h += `<div class="section-title">Hinweise (${P.warn.length})</div>${list(P.warn.map(esc))}`;
+  if (P.skip.length) h += `<div class="section-title">Nicht übernommen (${P.skip.length})</div>${list(P.skip.map(esc))}`;
+  if (P.keepNoTick) h += `<p class="hint">${P.keepNoTick} Übung(en) sind in Obsidian ohne Häkchen „fitlog-Auswahl“, aber mit fitlog verbunden. Sie bleiben in fitlog und werden weiter aktualisiert.</p>`;
+  if (nothing) h += '<div class="callout tip">Nichts Neues – fitlog ist auf dem Stand von Obsidian.</div>';
+  else if (P.tooBig) h += '<div class="callout warn">Dafür reicht der Speicher in diesem Browser nicht. Bitte weniger Übungen auswählen oder kleinere Bilder verwenden.</div>';
+  else h += '<p class="hint">Workouts, Verlauf und Pläne bleiben unverändert. Es wird nichts gelöscht. Trainingswerte und Kommentar bleiben, wie sie in fitlog eingestellt sind.</p>';
+  h += `<div class="modal-foot"><button class="btn ghost" data-a="modal-close">${nothing ? 'Schließen' : 'Abbrechen'}</button>${nothing || P.tooBig ? '' : '<button class="btn" data-a="obs-apply">Übernehmen</button>'}</div>`;
   return h;
 }
-async function readCsv(files) {
-  const csv = files.find((f) => /\.csv$/i.test(f.name) || f.type === 'text/csv');
-  const images = files.filter((f) => f.type.startsWith('image/'));
-  if (!csv) { ui.csv = { error: 'Keine CSV-Datei ausgewählt.' }; refreshModal(csvHtml()); return; }
-  let text = await csv.text();
-  if (text.includes('�')) {
-    // Fallback für „CSV (Trennzeichen-getrennt)“ ohne UTF-8
-    try { text = new TextDecoder('windows-1252').decode(await csv.arrayBuffer()); } catch (e) { /* bleibt */ }
-  }
-  const rows = parseCSV(text).filter((r) => r.some((x) => String(x).trim() !== ''));
-  if (rows.length < 2) { ui.csv = { error: 'Die CSV-Datei enthält keine Übungen.' }; refreshModal(csvHtml()); return; }
-  const head = rows[0].map(norm);
-  const col = {};
-  for (const [k, aliases] of Object.entries(CSV_COLS)) { const i = head.findIndex((h) => aliases.includes(h)); if (i >= 0) col[k] = i; }
-  if (col.name == null || col.type == null) { ui.csv = { error: 'Spalten „Name“ und „Typ“ wurden nicht gefunden. Bitte die Vorlage verwenden.' }; refreshModal(csvHtml()); return; }
-  const byFile = {}, byBase = {};
-  for (const f of images) { byFile[f.name.toLowerCase()] = f; byBase[f.name.toLowerCase().replace(/\.[^.]+$/, '')] = f; }
-  const seen = new Set(db.exercises.map((e) => e.name.trim().toLowerCase()));
-  const out = [];
-  for (const r of rows.slice(1)) {
-    const get = (k) => (col[k] != null ? String(r[col[k]] ?? '').trim() : '');
-    const name = get('name');
-    if (!name) continue;
-    const type = parseType(get('type'));
-    const imgName = get('img');
-    const file = imgName ? byFile[imgName.toLowerCase()] || byBase[imgName.toLowerCase().replace(/\.[^.]+$/, '')] : byBase[name.toLowerCase()];
-    const row = {
-      name, type, imgName, file: file || null,
-      desc: get('desc'), comment: get('comment'), url: get('url'),
-      perSide: yesNo(get('perSide'), false), scored: yesNo(get('scored'), true),
-      repMin: Math.round(num(get('repMin'))) || 8, repMax: Math.round(num(get('repMax'))) || 12,
-      step: num(get('step')), ok: false, status: ''
-    };
-    if (!type) row.status = `Typ „${get('type')}“ unbekannt (Gewicht, Körpergewicht oder Zeit)`;
-    else if (seen.has(name.toLowerCase())) row.status = 'Existiert bereits – übersprungen';
-    else { row.ok = true; row.status = imgName && !file ? 'Neu (Bild fehlt)' : 'Neu'; seen.add(name.toLowerCase()); }
-    out.push(row);
-  }
-  ui.csv = { rows: out };
-  refreshModal(csvHtml());
-}
-async function applyCsv() {
-  const c = ui.csv;
-  if (!c || !c.rows) return;
+
+function obsApply() {
+  const P = ui.obs;
+  if (!P || P.tooBig) return;
   const now = Date.now();
-  let n = 0;
-  for (const r of c.rows.filter((x) => x.ok)) {
-    let repMin = Math.max(1, r.repMin), repMax = Math.max(1, r.repMax);
-    if (repMin > repMax) [repMin, repMax] = [repMax, repMin];
-    const ex = {
-      id: uid(), name: r.name, type: r.type, perSide: r.perSide, scored: r.scored, repMin, repMax,
-      step: r.step > 0 ? r2(r.step) : DEFAULT_STEP[r.type], desc: r.desc, comment: r.comment, url: r.url,
-      hasImg: false, createdAt: now, updatedAt: now
-    };
-    if (r.file) { try { ex.hasImg = setImg(ex.id, await downscale(r.file)); } catch (e) { /* ohne Bild */ } }
-    db.exercises.push(ex);
-    n++;
+  const before = JSON.stringify(db.exercises);
+  const oldImgs = {};
+  const newIds = [];
+  let ok = true;
+  for (const u of P.upd) {
+    const ex = exById(u.id);
+    if (!ex) continue;
+    Object.assign(ex, u.fields);
+    if (u.img !== undefined) {
+      oldImgs[ex.id] = ex.hasImg ? getImg(ex.id) : null;
+      if (u.img) { if (!(ex.hasImg = setImg(ex.id, u.img))) ok = false; } else { delImg(ex.id); ex.hasImg = false; }
+    }
+    ex.updatedAt = now;
   }
-  closeModal(); save(); render();
-  toast(`${n} Übungen importiert.`);
+  for (const a of P.add) {
+    const ex = { id: uid(), obsId: a.obsId, name: a.name, type: a.type, perSide: a.perSide, scored: a.scored, repMin: a.repMin, repMax: a.repMax,
+      step: a.step, desc: a.desc, comment: '', url: a.url, hasImg: false, obsImg: a.sig, createdAt: now, updatedAt: now };
+    if (a.img && !(ex.hasImg = setImg(ex.id, a.img))) ok = false;
+    newIds.push(ex.id);
+    db.exercises.push(ex);
+  }
+  if (!ok || !save()) {
+    // Alles zurück auf den Stand vorher
+    db.exercises = JSON.parse(before);
+    for (const id of newIds) delImg(id);
+    for (const [id, d] of Object.entries(oldImgs)) { if (d) setImg(id, d); else delImg(id); }
+    save();
+    closeModal(); render();
+    toast('Nicht übernommen: Der Speicher reicht nicht. Es wurde nichts geändert.', { error: true, timeout: 9000 });
+    return;
+  }
+  const msg = `Übernommen: ${P.add.length} neu, ${P.upd.length} aktualisiert.`;
+  closeModal(); render();
+  if (syncReady()) {
+    openModal(`${modalHead('Übernommen')}<p>${esc(msg)}</p><p class="small muted">Jetzt <b>Senden</b>, damit das Handy die Übungen mit „Holen“ bekommt.</p>
+      <div class="modal-foot"><button class="btn ghost" data-a="modal-close">Später</button><button class="btn" data-a="sync-send">${ic('upload')}Senden</button></div>`, { dismiss: true });
+  } else toast(msg, { timeout: 6000 });
 }
 
 /* ================= 10 Start ================= */
@@ -1789,7 +1982,7 @@ document.addEventListener('keydown', (ev) => {
 });
 // Strg+V: Bild in die gerade geöffnete Übung einfügen
 document.addEventListener('paste', (ev) => {
-  if (!ui.draft || ui.draft.kind !== 'ex') return;
+  if (!ui.draft || ui.draft.kind !== 'ex' || ui.draft.obsId) return;
   const item = [...(ev.clipboardData ? ev.clipboardData.items : [])].find((x) => x.type.startsWith('image/'));
   if (!item) return;
   ev.preventDefault();

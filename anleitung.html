@@ -79,15 +79,15 @@
   <li><a href="#ueberblick">Überblick: die fitlog-Welt</a></li>
   <li><a href="#install">App aufs Gerät bringen</a></li>
   <li><a href="#begriffe">Begriffe</a></li>
-  <li><a href="#uebungen">Übungen anlegen (PC)</a></li>
-  <li><a href="#import">Viele Übungen importieren (PC)</a></li>
+  <li><a href="#uebungen">Übungen aus Obsidian (PC)</a></li>
+  <li><a href="#import">Übungen bearbeiten</a></li>
   <li><a href="#plaene">Pläne anlegen (PC)</a></li>
   <li><a href="#training">Trainieren (Handy)</a></li>
   <li><a href="#steigerung">Steigerungsvorschläge</a></li>
   <li><a href="#score">Auswertung: Index, Trend, Bestleistung</a></li>
   <li><a href="#sync">Geräte abgleichen</a></li>
   <li><a href="#github">Abgleich über GitHub</a></li>
-  <li><a href="#datei">Austausch per Datei</a></li>
+  <li><a href="#datei">Sicherung als Datei (Ausnahme)</a></li>
   <li><a href="#sichern">Sichern und wiederherstellen</a></li>
   <li><a href="#updates">Updates</a></li>
   <li><a href="#hilfe">Probleme lösen</a></li>
@@ -101,7 +101,7 @@
 <table>
   <tr><th style="width:18%">Gerät</th><th>Typische Aufgaben</th></tr>
   <tr><td><b>Handy</b></td><td>Im Studio das Training erfassen. Danach die Daten an den PC übertragen.</td></tr>
-  <tr><td><b>PC</b></td><td>Übungen anlegen (mit Bildern), Pläne zusammenstellen und ändern, Verlauf in Ruhe ansehen. Danach die Änderungen ans Handy übertragen.</td></tr>
+  <tr><td><b>PC</b></td><td>Übungen aus Obsidian holen, Pläne zusammenstellen und ändern, Verlauf in Ruhe ansehen. Danach <b>Senden</b>, damit das Handy die Änderungen holen kann.</td></tr>
 </table>
 
 <h3>Die Bausteine</h3>
@@ -109,11 +109,9 @@
   <tr><th style="width:34%">Baustein</th><th>Wozu</th></tr>
   <tr><td><b>Die App</b><br><span style="color:var(--muted)">im Internet, Adresse in Kapitel <a href="#install">2</a></span></td><td>Das eigentliche Programm. Einmal installieren, danach funktioniert es auch ohne Internet, z. B. im Studio.</td></tr>
   <tr><td><b>Diese Anleitung</b></td><td>In der App jederzeit über das <b>?</b> oben rechts erreichbar.</td></tr>
-  <tr><td><code>AO_fitlog_Startdaten.json</code></td><td>Fertige Übungen mit Bildern und ein Beispielplan zum Einstieg (Kapitel <a href="#erststart">2.4</a>).</td></tr>
-  <tr><td><code>AO_fitlog_Uebungen_Vorlage.xlsx</code></td><td>Leere Excel-Vorlage, um viele Übungen auf einmal anzulegen (Kapitel <a href="#import">5</a>).</td></tr>
-  <tr><td><code>AO_fitlog_Uebungskatalog.xlsx</code> und Ordner <code>Übungsbilder</code></td><td>Große Sammlung von rund 850 Übungen aus Fachbüchern, mit Beschreibung und Bild. Ein Vorrat zum Aussuchen, nicht alles muss in die App (Kapitel <a href="#katalog">5.2</a>).</td></tr>
-  <tr><td><b>Privates GitHub-Repository</b><br><span style="color:var(--muted)">optional, empfohlen</span></td><td>Deine persönliche Ablage im Internet für den bequemen Abgleich zwischen Handy und PC (Kapitel <a href="#github">11</a>).</td></tr>
-  <tr><td>Sicherungs- und Änderungsdateien<br><code>AO_fitlog_…​.json</code> / <code>.txt</code></td><td>Von der App erzeugte Dateien zum Sichern und zum Übertragen ohne GitHub (Kapitel <a href="#datei">12</a>).</td></tr>
+  <tr><td><b>Obsidian-Übungsdatenbank</b><br><span style="color:var(--muted)">Ordner <code>master exercise db obsidian</code></span></td><td>Die gemeinsame Quelle aller Übungen für fitlog und aoCOACH. Hier legst du Übungen an und pflegst Name, Beschreibung, Bild und Link (Kapitel <a href="#uebungen">4</a>).</td></tr>
+  <tr><td><b>Privates GitHub-Repository</b><br><span style="color:var(--muted)">der Standardweg</span></td><td>Deine persönliche Ablage im Internet. Darüber tauschen Handy und PC ihre Daten aus (<b>Senden/Holen</b>), und jede gesendete Fassung bleibt dort als Sicherung erhalten (Kapitel <a href="#github">11</a>).</td></tr>
+  <tr><td>Sicherungsdatei<br><code>AO_fitlog_…​.json</code> / <code>.txt</code><br><span style="color:var(--muted)">nur für Ausnahmen</span></td><td>Eine vollständige Sicherung als Datei, z. B. wenn GitHub nicht erreichbar ist oder für ein Gerät ohne Abgleich (Kapitel <a href="#datei">12</a>).</td></tr>
 </table>
 
 <!-- ============================================================ -->
@@ -148,8 +146,9 @@
   <li>Unten bzw. links auf <span class="k">Daten</span> tippen und einen <b>Gerätenamen</b> eintragen, z. B. <code>Handy</code> oder <code>PC</code>. Er erscheint später beim Abgleich und in Dateinamen.</li>
   <li>Startbestand wählen:
     <ul>
-      <li><b>Erstes Gerät:</b> <span class="k">Daten</span> › <span class="k">Datei importieren</span> › <code>AO_fitlog_Startdaten.json</code> wählen › Vorschau prüfen › <span class="k">Übernehmen</span>. Oder ganz leer beginnen und eigene Übungen anlegen.</li>
-      <li><b>Zweites Gerät:</b> Nichts importieren, sondern den Abgleich einrichten (Kapitel <a href="#github">11</a>) und <span class="k">Holen</span> tippen. Ohne GitHub stattdessen eine Sicherungsdatei vom ersten Gerät importieren (Kapitel <a href="#datei">12</a>).</li>
+      <li><b>Normalfall:</b> Den Abgleich über GitHub einrichten (Kapitel <a href="#github">11</a>) und <span class="k">Holen</span> tippen. Dann kommen Übungen, Pläne und Workouts der anderen Geräte.</li>
+      <li><b>Ganz neu am PC:</b> Übungen mit <span class="k">Aus Obsidian holen</span> übernehmen (Kapitel <a href="#uebungen">4</a>).</li>
+      <li><b>Nur ausnahmsweise</b> (kein GitHub möglich): eine Sicherungsdatei einlesen (Kapitel <a href="#datei">12</a>).</li>
     </ul></li>
   <li>Unter <span class="k">Übungen</span> bei den Übungen Typ, „Je Seite“ und „Zählt zum Score“ prüfen. Der Typ lässt sich nur ändern, solange die Übung noch nie trainiert wurde.</li>
 </ol>
@@ -174,52 +173,47 @@
 </table>
 
 <!-- ============================================================ -->
-<h2 id="uebungen" class="pb"><span class="n">4</span>Übungen anlegen (PC)</h2>
-<p><span class="k">Übungen</span> › <span class="k">+ Neue Übung</span>. Zum Bearbeiten eine Übung in der Liste anklicken.</p>
-<figure><img src="anleitung-bilder/07_pc_uebung.jpg" alt="Übung bearbeiten am PC"><figcaption>Übung bearbeiten am PC</figcaption></figure>
+<h2 id="uebungen" class="pb"><span class="n">4</span>Übungen aus Obsidian (PC)</h2>
+<p>Alle Übungen kommen aus der Obsidian-Übungsdatenbank. Dort legst du sie an und pflegst sie. fitlog übernimmt sie am PC mit einem Klick. So gibt es jede Übung nur einmal, und fitlog und aoCOACH zeigen dieselben Namen, Beschreibungen und Bilder. Von Hand lässt sich in fitlog keine neue Übung mehr anlegen.</p>
+<h3>4.1 Übung für fitlog auswählen (Obsidian)</h3>
+<ol class="steps">
+  <li>In Obsidian die Übung öffnen oder mit der Vorlage „Übung“ neu anlegen.</li>
+  <li>Das Häkchen <b>fitlog-Auswahl</b> setzen. Die Ansicht „fitlog-Auswahl“ in der Übungsdatenbank zeigt alle so markierten Übungen.</li>
+  <li>Die <b>Messart</b> eintragen: <code>Gewicht</code>, <code>Körpergewicht</code> oder <code>Zeit</code>. Ohne Messart wird die Übung nicht übernommen.</li>
+  <li>Freiwillig: <code>je_seite</code>, <code>fitlog_wdh_min</code>, <code>fitlog_wdh_max</code>, <code>fitlog_schritt</code> und <code>fitlog_score</code> als Startwerte. Fehlen sie, nimmt fitlog 8 bis 12 Wdh und den Standardschritt.</li>
+</ol>
+<p>Das Häkchen <b>Coach-Auswahl</b> gehört zur App aoCOACH und hat für fitlog keine Bedeutung.</p>
+<h3>4.2 In fitlog holen (PC)</h3>
+<ol class="steps">
+  <li>Wenn das Handy etwas gesendet hat: zuerst <span class="k">Daten</span> › <span class="k">Holen</span>. Die App prüft das und erinnert dich sonst daran.</li>
+  <li><span class="k">Übungen</span> › <span class="k">Aus Obsidian holen</span> › den Ordner <code>master exercise db obsidian</code> wählen › Chrome fragt, ob die App den Ordner ansehen darf: <span class="k">Dateien ansehen</span>. Die App liest nur, in Obsidian ändert sie nichts.</li>
+  <li>Die Vorschau zeigt, was <b>neu</b> dazukommt, was <b>aktualisiert</b> wird (z. B. Beschreibung oder Bild) und was <b>nicht übernommen</b> wird, mit Grund. <span class="k">Übernehmen</span>.</li>
+  <li><span class="k">Senden</span>. Am Handy <span class="k">Holen</span>.</li>
+</ol>
+<table>
+  <tr><th style="width:34%">Was</th><th>Wer bestimmt es</th></tr>
+  <tr><td>Name, Beschreibung, Bild, Link</td><td><b>Obsidian.</b> Änderungen dort kommen beim nächsten Holen in fitlog an. Die Beschreibung setzt sich aus „Kurzbeschreibung“ und „Ausführung“ zusammen, der Link ist der erste Internet-Link unter „Quellen und Links“.</td></tr>
+  <tr><td>Messart (Typ)</td><td><b>Obsidian beim ersten Holen.</b> Später ändert fitlog den Typ nur, solange die Übung noch nie trainiert wurde. Sonst gibt die Vorschau einen Hinweis.</td></tr>
+  <tr><td>Wdh-Bereich, Steigerung, Je Seite, Zählt zum Score, Kommentar</td><td><b>fitlog.</b> Obsidian liefert nur Startwerte für neue Übungen.</td></tr>
+</table>
+<div class="box"><b>Was beim Holen nie passiert</b>Es wird nichts gelöscht. Workouts, Verlauf und Pläne bleiben unverändert. Jede Übung behält ihre Kennung, ihr Verlauf bleibt also erhalten, auch wenn sich der Name ändert. Entfernst du in Obsidian das Häkchen, bleibt die Übung in fitlog.</div>
+<div class="box warn"><b>Speicher</b>Die App hat auf jedem Gerät nur rund 5 MB Speicher, und Bilder brauchen davon am meisten. Bilder werden beim Holen automatisch verkleinert. Reicht der Platz nicht, sagt es die Vorschau, und es wird nichts geändert. Die Belegung steht unter <span class="k">Daten</span> › Speicher.</div>
+
+<!-- ============================================================ -->
+<h2 id="import"><span class="n">5</span>Übungen bearbeiten</h2>
+<p><span class="k">Übungen</span> › Übung anklicken. Übungen aus Obsidian tragen ihre Nummer (z. B. <b>UE-0002</b>) als grünes Schild in der Liste.</p>
+<figure><img src="anleitung-bilder/07_pc_uebung.jpg" alt="Übung bearbeiten am PC"><figcaption>Übung bearbeiten (Bild aus einer früheren Version)</figcaption></figure>
 <table>
   <tr><th style="width:28%">Feld</th><th>Bedeutung</th></tr>
-  <tr><td>Name</td><td>Pflicht. Jeder Name darf nur einmal vorkommen.</td></tr>
-  <tr><td>Typ</td><td>Gewicht, Körpergewicht oder Zeit. Nach dem ersten Training fest, damit die Auswertung stimmt.</td></tr>
+  <tr><td>Name, Beschreibung, Bild, Link</td><td>Nur lesbar. Ändern in Obsidian, danach am PC <span class="k">Aus Obsidian holen</span>.</td></tr>
+  <tr><td>Typ</td><td>Kommt aus Obsidian. Nach dem ersten Training fest, damit die Auswertung stimmt.</td></tr>
   <tr><td>Steigerung</td><td>Größe eines Vorschlagsschritts. Standard: <b>0,5 kg</b> · <b>1 Wdh</b> · <b>5 s</b>. Bei Kurzhanteln mit festen Stufen (z. B. 12 → 14 kg) hier <code>2</code> eintragen.</td></tr>
   <tr><td>Wdh-Bereich von / bis</td><td>Nur Typ Gewicht. Standard 8 bis 12. Siehe Kapitel <a href="#steigerung">8</a>.</td></tr>
   <tr><td>Je Seite</td><td>Für einseitige Übungen anhaken.</td></tr>
   <tr><td>Zählt zum Score</td><td>Für Mobilisation und Technikübungen abhaken. Dann gibt es auch keinen Steigerungsvorschlag.</td></tr>
-  <tr><td>Bild</td><td><b>Strg+V</b> fügt ein kopiertes Bild ein (z. B. einen Bildschirmausschnitt). Alternativ: Datei hineinziehen oder <span class="k">Datei wählen</span>. Bilder werden automatisch verkleinert.</td></tr>
-  <tr><td>Beschreibung / Technik</td><td>Im Training unter „Technik &amp; Bild“ aufklappbar. Eine Leerzeile beginnt einen neuen Absatz.</td></tr>
   <tr><td>Kommentar / Einstellung</td><td>Im Training <b>immer sichtbar</b>, z. B. „Sitzhöhe 3“.</td></tr>
-  <tr><td>Link</td><td>Optional, z. B. Video. Muss mit <code>https://</code> beginnen.</td></tr>
 </table>
-<p><b>Löschen:</b> Papierkorb im Bearbeiten-Fenster. Das geht nur, wenn die Übung in keinem Plan steht. Danach erscheint einige Sekunden lang <span class="k">Rückgängig</span>.</p>
-
-<!-- ============================================================ -->
-<h2 id="import"><span class="n">5</span>Viele Übungen importieren (PC)</h2>
-<p>Statt jede Übung einzeln anzulegen, lassen sich viele Übungen aus einer Excel-Liste einlesen. Die App liest dafür eine <b>CSV-Datei</b>, die Excel aus der Liste erzeugt.</p>
-
-<h3>5.1 Eigene Liste mit der Vorlage</h3>
-<ol class="steps">
-  <li><code>AO_fitlog_Uebungen_Vorlage.xlsx</code> öffnen. Im Blatt „Übungen“ eine Zeile pro Übung ausfüllen. Das Blatt „Erklärung“ beschreibt jede Spalte.</li>
-  <li><span class="k">Datei</span> › <span class="k">Speichern unter</span> › Dateityp <b>CSV UTF-8 (durch Trennzeichen getrennt)</b>. Den Hinweis von Excel mit <span class="k">Ja</span> bestätigen.</li>
-  <li>Die Bilder in <b>denselben Ordner</b> wie die CSV-Datei legen.</li>
-  <li>App › <span class="k">Übungen</span> › <span class="k">Import</span> › im Dateidialog <b>Strg+A</b> (CSV und Bilder gemeinsam markieren) › <span class="k">Öffnen</span>.</li>
-  <li>Vorschau prüfen › <span class="k">… Übungen importieren</span>.</li>
-</ol>
-<table>
-  <tr><th style="width:28%">Spalte „Bild“</th><th>Ergebnis</th></tr>
-  <tr><td>Dateiname, z. B. <code>goblet.jpg</code></td><td>Genau diese Datei wird verwendet.</td></tr>
-  <tr><td>leer</td><td>Es wird eine Datei gesucht, die genauso heißt wie die Übung (z. B. <code>Goblet Squat.jpg</code>). Gibt es keine, bleibt die Übung ohne Bild.</td></tr>
-</table>
-<div class="box"><b>Was die Vorschau anzeigt</b>„Neu“ wird importiert. „Existiert bereits“ (gleicher Name) und „Typ unbekannt“ werden übersprungen. „Bild fehlt“ wird ohne Bild importiert. Bilder lassen sich später per Strg+V ergänzen.</div>
-
-<h3 id="katalog">5.2 Übungen aus dem Übungskatalog übernehmen</h3>
-<p><code>AO_fitlog_Uebungskatalog.xlsx</code> ist eine Sammlung von rund 850 Übungen aus mehreren Fachbüchern. Jede Zeile enthält Name, Typ, eine Beschreibung (Ausgangsposition, Ausführung, worauf zu achten ist, Quelle), benötigte Hilfsmittel und den Namen des passenden Bildes. Die Bilder liegen im Ordner <code>Übungsbilder</code>. Die Spalten A bis K entsprechen genau der Vorlage, die Spalten danach (Vorschau, Herkunft, App-ID, Erstellt, Geändert) dienen nur der Übersicht und werden beim Import ignoriert.</p>
-<ol class="steps">
-  <li>Im Katalog die gewünschten Übungen aussuchen, z. B. mit dem Excel-Filter. Die Spalte <b>App-ID</b> ist bei Übungen gefüllt, die schon in der App sind.</li>
-  <li>Die ausgewählten Zeilen samt Kopfzeile in ein neues, leeres Excel-Blatt kopieren und dieses wie in 5.1 als <b>CSV UTF-8</b> in einen neuen Ordner speichern.</li>
-  <li>Die zugehörigen Bilder (Dateiname steht in der Spalte „Bild“) aus <code>Übungsbilder</code> in diesen Ordner kopieren.</li>
-  <li>Wie in 5.1 ab Schritt 4 importieren.</li>
-</ol>
-<div class="box warn"><b>Nicht den ganzen Katalog importieren</b>Die App hat auf jedem Gerät nur rund 5 MB Speicher, und Bilder brauchen davon am meisten. Nur Übungen übernehmen, die du wirklich trainieren willst. Die Belegung steht unter <span class="k">Daten</span> › Speicher.</div>
+<p><b>Löschen:</b> Papierkorb im Bearbeiten-Fenster. Das geht nur, wenn die Übung in keinem Plan steht. Gelöscht wird nur in fitlog, in Obsidian bleibt die Übung. Damit sie nicht wiederkommt, in Obsidian das Häkchen „fitlog-Auswahl“ entfernen. Nach dem Löschen erscheint einige Sekunden lang <span class="k">Rückgängig</span>.</p>
 
 <!-- ============================================================ -->
 <h2 id="plaene"><span class="n">6</span>Pläne anlegen (PC)</h2>
@@ -319,23 +313,23 @@
 
 <!-- ============================================================ -->
 <h2 id="sync" class="pb"><span class="n">10</span>Geräte abgleichen</h2>
-<p>Handy und PC haben jeweils ihren eigenen Datenbestand. Was du auf dem einen Gerät tust, kennt das andere erst nach einem Abgleich. Es gibt zwei Wege. Beide übertragen <b>alles, auch die Bilder</b>, und beide führen die Daten auf dieselbe Weise zusammen.</p>
+<p>Handy und PC haben jeweils ihren eigenen Datenbestand. Was du auf dem einen Gerät tust, kennt das andere erst nach einem Abgleich.</p>
 <table>
-  <tr><th style="width:24%"></th><th>Abgleich über GitHub (Kapitel <a href="#github">11</a>)</th><th>Austausch per Datei (Kapitel <a href="#datei">12</a>)</th></tr>
-  <tr><td><b>Bedienung</b></td><td>Ein Tipp auf <span class="k">Senden</span>, auf dem anderen Gerät ein Tipp auf <span class="k">Holen</span></td><td>Datei erzeugen, z. B. per Mail an dich selbst schicken, auf dem anderen Gerät importieren</td></tr>
-  <tr><td><b>Voraussetzung</b></td><td>Kostenloses GitHub-Konto, einmal einrichten (ca. 10 Minuten), Internet</td><td>Keine</td></tr>
+  <tr><th style="width:24%"></th><th>Abgleich über GitHub (Kapitel <a href="#github">11</a>)</th><th>Sicherung als Datei (Kapitel <a href="#datei">12</a>)</th></tr>
+  <tr><td><b>Wofür</b></td><td><b>Der Standardweg</b> für jeden Datenaustausch zwischen Handy und PC</td><td><b>Nur für Ausnahmen:</b> GitHub nicht erreichbar, Gerät ohne Abgleich, zusätzliche eigene Sicherung</td></tr>
+  <tr><td><b>Bedienung</b></td><td>Ein Tipp auf <span class="k">Senden</span>, auf dem anderen Gerät ein Tipp auf <span class="k">Holen</span></td><td>Sicherung speichern, auf das andere Gerät bringen, dort wiederherstellen</td></tr>
   <tr><td><b>Hinweis auf Neues</b></td><td>Die App meldet von selbst, wenn das andere Gerät gesendet hat</td><td>Nein</td></tr>
-  <tr><td><b>Empfohlen für</b></td><td>Den Alltag</td><td>Wer kein GitHub möchte, und als zusätzliche Sicherung</td></tr>
+  <tr><td><b>Sicherung</b></td><td>Jedes Senden ist zugleich eine Sicherung, GitHub bewahrt alle Fassungen auf</td><td>Nur so aktuell wie die letzte Datei</td></tr>
 </table>
 
 <div class="rule">Die goldene Regel: <b>Erst holen – dann arbeiten – dann senden.</b><br>
 <span style="font-size:0.93rem">Vor dem Training bzw. vor der Arbeit am PC holen, was das andere Gerät gesendet hat. Danach senden, was du geändert hast. Dann gibt es kein Durcheinander.</span></div>
 
 <h3 id="regeln">So werden Daten zusammengeführt</h3>
-<p>Beim Holen und beim Datei-Import wird <b>nie blind überschrieben</b>. Zuerst zeigt eine Vorschau, was neu ist und was sich ändert. Erst <span class="k">Übernehmen</span> führt es aus.</p>
+<p>Beim Holen und beim Wiederherstellen einer Sicherung wird <b>nie blind überschrieben</b>. Zuerst zeigt eine Vorschau, was neu ist und was sich ändert. Erst <span class="k">Übernehmen</span> führt es aus.</p>
 <ul>
   <li><b>Workouts</b> werden ergänzt, nie überschrieben.</li>
-  <li><b>Übungen und Pläne:</b> Es gewinnt die zuletzt geänderte Fassung. Bilder gehören zur Übung und kommen mit ihr.</li>
+  <li><b>Übungen und Pläne:</b> Es gewinnt die zuletzt geänderte Fassung. Bilder gehören zur Übung und kommen mit ihr. Neue und geänderte Übungen aus Obsidian kommen so vom PC aufs Handy.</li>
   <li><b>Löschungen</b> werden übertragen: Auf einem Gerät gelöscht heißt nach dem Abgleich auch auf dem anderen gelöscht.</li>
   <li>Ein <b>laufendes Workout</b> wird nicht übertragen.</li>
 </ul>
@@ -392,7 +386,7 @@
   <tr><th style="width:34%">Situation</th><th>Was tun</th></tr>
   <tr><td><b>Handy, vor dem Training</b></td><td>Zeigt die Trainingsseite „Neue Daten … liegen bereit“: <span class="k">Holen</span> › <span class="k">Übernehmen</span>. Dann trainieren.</td></tr>
   <tr><td><b>Handy, nach dem Training</b></td><td>In der Auswertung <span class="k">Senden</span> tippen (oder später unter <span class="k">Daten</span> › <span class="k">Senden</span>).</td></tr>
-  <tr><td><b>PC, bevor du Übungen oder Pläne bearbeitest</b></td><td><span class="k">Daten</span> › <span class="k">Holen</span> › <span class="k">Übernehmen</span>. So sind die neuen Workouts vom Handy da.</td></tr>
+  <tr><td><b>PC, bevor du Übungen aus Obsidian holst oder Pläne bearbeitest</b></td><td><span class="k">Daten</span> › <span class="k">Holen</span> › <span class="k">Übernehmen</span>. So sind die neuen Workouts vom Handy da.</td></tr>
   <tr><td><b>PC, nach dem Bearbeiten</b></td><td><span class="k">Daten</span> › <span class="k">Senden</span>.</td></tr>
 </table>
 <ul>
@@ -404,7 +398,7 @@
 </ul>
 
 <h3>11.5 Was auf GitHub liegt</h3>
-<p>Im Repository legt die App zwei Ordner an: <code>geraete</code> mit einer Datei je Gerät (Übungen, Pläne, Workouts) und <code>bilder</code> mit den Übungsbildern. Bitte dort nichts von Hand ändern. Das Repository ist zugleich eine aktuelle Sicherung aller gesendeten Daten (Kapitel <a href="#sichern">13</a>).</p>
+<p>Im Repository legt die App zwei Ordner an: <code>geraete</code> mit einer Datei je Gerät (Übungen, Pläne, Workouts) und <code>bilder</code> mit den Übungsbildern. Bitte dort nichts von Hand ändern. Das Repository ist zugleich eine Sicherung aller gesendeten Daten: GitHub bewahrt jede gesendete Fassung auf, auch frühere (Kapitel <a href="#sichern">13</a>).</p>
 <ul>
   <li>Das Repository muss <b>privat</b> bleiben. Die App verweigert den Abgleich, wenn es öffentlich ist.</li>
   <li>Der Token wird nur auf dem jeweiligen Gerät gespeichert. Er ist in keiner Sicherungsdatei enthalten.</li>
@@ -413,47 +407,39 @@
 </ul>
 
 <!-- ============================================================ -->
-<h2 id="datei" class="pb"><span class="n">12</span>Austausch per Datei</h2>
-<p>Dieser Weg funktioniert immer, auch ohne GitHub. Die App erzeugt eine Datei, die du auf das andere Gerät bringst und dort importierst.</p>
+<h2 id="datei" class="pb"><span class="n">12</span>Sicherung als Datei (Ausnahme)</h2>
+<div class="box warn"><b>Nur für Ausnahmesituationen</b>Der normale Weg für den Datenaustausch ist <b>Senden/Holen über GitHub</b> (Kapitel <a href="#github">11</a>). Die Datei ist ein Notweg, z. B. wenn GitHub nicht erreichbar ist, für ein Gerät ohne Abgleich, oder wenn du eine Sicherung zusätzlich selbst aufbewahren möchtest.</div>
 <div class="figs">
-  <figure class="phone"><img src="anleitung-bilder/12_datei_austausch.jpg" alt="Austausch per Datei"><figcaption>Daten: Austausch per Datei (auf dem Handy zusätzlich mit „teilen …“)</figcaption></figure>
+  <figure class="phone"><img src="anleitung-bilder/12_datei_austausch.jpg" alt="Sicherung als Datei"><figcaption>Daten: Sicherung als Datei (Bild aus einer früheren Version)</figcaption></figure>
   <div style="flex:1 1 320px">
-    <h3>Zwei Arten von Dateien</h3>
-    <table>
-      <tr><th style="width:36%">Art</th><th>Inhalt</th></tr>
-      <tr><td><b>Nur Änderungen</b></td><td>Alles, was seit der letzten Datei dieses Geräts neu oder geändert ist, mit Bildern. Klein, ideal für den Alltag. Der Zeitpunkt steht direkt über dem Knopf.</td></tr>
-      <tr><td><b>Vollständige Sicherung</b></td><td>Alle Übungen mit Bildern, alle Pläne und Workouts.</td></tr>
-    </table>
-    <p>Beide Arten werden auf dem anderen Gerät gleich importiert. Die Vorschau zeigt an, um welche Art es sich handelt.</p>
+    <h3>Sicherung speichern</h3>
+    <ol class="steps">
+      <li><span class="k">Daten</span> › <span class="k">Sicherung als Datei</span> (am Handy auch <span class="k">Sicherung teilen …</span>).</li>
+      <li>Die Datei enthält alle Übungen mit Bildern, alle Pläne und Workouts. Der Zugangsschlüssel für GitHub ist nicht enthalten.</li>
+    </ol>
+    <h3>Sicherung wiederherstellen</h3>
+    <ol class="steps">
+      <li><span class="k">Daten</span> › <span class="k">Sicherung wiederherstellen</span> › Datei wählen.</li>
+      <li>Vorschau prüfen › <span class="k">Übernehmen</span>. Die Daten werden zusammengeführt wie beim Holen, vorhandene Workouts bleiben.</li>
+    </ol>
   </div>
 </div>
-<h3>Handy → PC (nach dem Training)</h3>
-<ol class="steps">
-  <li>Handy: <span class="k">Daten</span> › <span class="k">Änderungen teilen …</span> › z. B. per Mail an dich selbst oder in einen Cloud-Speicher.</li>
-  <li>PC: Datei speichern › App › <span class="k">Daten</span> › <span class="k">Datei importieren</span> › Datei wählen › <span class="k">Übernehmen</span>.</li>
-</ol>
-<h3>PC → Handy (nach Änderungen an Übungen oder Plänen)</h3>
-<ol class="steps">
-  <li>PC: <span class="k">Daten</span> › <span class="k">Änderungen als Datei</span> › Datei aufs Handy schicken (Mail, Cloud, Kabel).</li>
-  <li>Handy: <span class="k">Daten</span> › <span class="k">Datei importieren</span> › Datei wählen › <span class="k">Übernehmen</span>.</li>
-</ol>
-<div class="box warn"><b>Jede Änderungsdatei muss ankommen</b>Die nächste Änderungsdatei enthält nur, was <i>danach</i> passiert ist. Ist eine Datei verloren gegangen oder nicht importiert worden, einfach eine <b>vollständige Sicherung</b> schicken. Sie bringt das andere Gerät sicher auf den ganzen Stand.</div>
 <h3>Dateinamen</h3>
-<p>Der Name enthält Gerät, Art, Datum und Uhrzeit, z. B. <code>AO_fitlog_Handy_Aenderungen_2026-10-10_19-45.txt</code> oder <code>AO_fitlog_PC_2026-10-10_20-10.json</code>. Beim <b>Teilen</b> endet die Datei auf <code>.txt</code> (Android erlaubt keine .json-Dateien zum Teilen), beim <b>Speichern</b> auf <code>.json</code>. Beide lassen sich importieren.</p>
+<p>Der Name enthält Gerät, Datum und Uhrzeit, z. B. <code>AO_fitlog_PC_2026-10-10_20-10.json</code>. Beim <b>Teilen</b> endet die Datei auf <code>.txt</code> (Android erlaubt keine .json-Dateien zum Teilen), beim <b>Speichern</b> auf <code>.json</code>. Beide lassen sich wiederherstellen. Ältere Dateien „Nur Änderungen“ lassen sich ebenfalls noch einlesen.</p>
 
 <!-- ============================================================ -->
 <h2 id="sichern"><span class="n">13</span>Sichern und wiederherstellen</h2>
 <div class="box warn"><b>Wichtig</b>Die Daten liegen im Browser des Geräts. Wer die Browserdaten löscht, die App deinstalliert oder das Handy zurücksetzt, verliert sie auf diesem Gerät. Deshalb regelmäßig senden oder sichern.</div>
 <ul>
-  <li><b>Mit GitHub:</b> Jedes <span class="k">Senden</span> ist zugleich eine Sicherung. Auf GitHub liegt immer der zuletzt gesendete Stand jedes Geräts.</li>
-  <li><b>Ohne GitHub:</b> Ab und zu eine <b>vollständige Sicherung</b> als Datei an einem sicheren Ort ablegen.</li>
-  <li><b>Erinnerung:</b> Nach 3 Workouts, die weder gesendet noch gesichert wurden, erscheint auf der Trainingsseite ein Hinweis, und <span class="k">Daten</span> trägt einen orangen Punkt.</li>
+  <li><b>Standard:</b> Jedes <span class="k">Senden</span> ist zugleich eine Sicherung. Auf GitHub liegt immer der zuletzt gesendete Stand jedes Geräts, frühere Fassungen bleiben in der Versionsgeschichte erhalten.</li>
+  <li><b>Zusätzlich, nur bei Bedarf:</b> eine <b>Sicherung als Datei</b> an einem sicheren Ort ablegen, z. B. vor einem Gerätewechsel.</li>
+  <li><b>Erinnerung:</b> Nach 3 Workouts, die nicht gesendet wurden, erscheint auf der Trainingsseite ein Hinweis, und <span class="k">Daten</span> trägt einen orangen Punkt.</li>
 </ul>
 <h3>Neues Handy oder neuer PC</h3>
 <ol class="steps">
   <li>App installieren (Kapitel <a href="#install">2</a>) und einen Gerätenamen eintragen.</li>
   <li><b>Mit GitHub:</b> Abgleich einrichten (Kapitel <a href="#github">11.3</a>) › <span class="k">Holen</span> › <span class="k">Übernehmen</span>. Damit kommen alle gesendeten Daten samt Bildern zurück, auch die des alten Geräts.<br>
-      <b>Ohne GitHub:</b> <span class="k">Daten</span> › <span class="k">Datei importieren</span> › die neueste vollständige Sicherung wählen.</li>
+      <b>Nur ausnahmsweise, ohne GitHub:</b> <span class="k">Daten</span> › <span class="k">Sicherung wiederherstellen</span> › die neueste Sicherungsdatei wählen.</li>
 </ol>
 
 <!-- ============================================================ -->
@@ -478,22 +464,25 @@
 <h3>Allgemein</h3>
 <table>
   <tr><th style="width:38%">Problem</th><th>Lösung</th></tr>
-  <tr><td>„Keine AO-fitlog-Datei“ beim Import</td><td>Die Datei stammt aus einer anderen App (z. B. dem Vorgänger „AO Trainiert“). Nur Dateien von AO fitlog oder die Startdaten-Datei verwenden.</td></tr>
-  <tr><td>„Seit der letzten Datei gibt es keine Änderungen“</td><td>Es gibt nichts Neues zu übertragen. Wenn das andere Gerät trotzdem etwas vermisst: vollständige Sicherung schicken.</td></tr>
+  <tr><td>„Keine AO-fitlog-Sicherung“ beim Wiederherstellen</td><td>Die Datei stammt nicht aus „Sicherung als Datei“ von AO fitlog. Eine solche Datei wählen.</td></tr>
   <tr><td>„Speicher voll“</td><td>Belegung unter <span class="k">Daten</span> › Speicher prüfen (ca. 5.000 KB verfügbar). Nicht benötigte Übungen mit Bild löschen oder Bilder entfernen.</td></tr>
   <tr><td>App ist auf einem Gerät plötzlich leer</td><td>Anderer Browser oder Browserdaten gelöscht. Kapitel <a href="#sichern">13</a>, „Neues Handy oder neuer PC“.</td></tr>
-  <tr><td>Typ einer Übung nicht änderbar</td><td>Die Übung wurde bereits trainiert. Neue Übung mit anderem Namen anlegen.</td></tr>
+  <tr><td>Typ einer Übung nicht änderbar</td><td>Die Übung wurde bereits trainiert. In Obsidian eine neue Übung mit anderem Namen und der richtigen Messart anlegen und holen.</td></tr>
+  <tr><td>Name, Beschreibung oder Bild nicht änderbar</td><td>Die Übung kommt aus Obsidian. Dort ändern, dann am PC <span class="k">Aus Obsidian holen</span> und <span class="k">Senden</span>.</td></tr>
+  <tr><td>„Aus Obsidian holen“ fehlt</td><td>Gibt es nur am PC in Chrome oder Edge. Am Handy kommen die Übungen mit <span class="k">Holen</span>.</td></tr>
+  <tr><td>„Erst Holen“ beim Holen aus Obsidian</td><td>Ein anderes Gerät hat neue Daten gesendet. Erst <span class="k">Holen</span>, dann noch einmal <span class="k">Aus Obsidian holen</span>. So überschreibt der PC keine neueren Daten vom Handy.</td></tr>
+  <tr><td>„Fehlt auf diesem Gerät – erst Holen“</td><td>Die Übung ist schon mit fitlog verbunden, aber auf diesem PC noch nicht vorhanden. Erst <span class="k">Holen</span>.</td></tr>
+  <tr><td>„Messart fehlt“</td><td>In Obsidian bei der Übung <code>messart</code> eintragen: Gewicht, Körpergewicht oder Zeit.</td></tr>
   <tr><td>Übung im Plan nicht entfernbar</td><td>Der Plan ist gesperrt. <span class="k">Als neue Version anlegen</span> verwenden (Kapitel <a href="#plaene">6</a>).</td></tr>
   <tr><td>Übung lässt sich nicht löschen</td><td>Sie steht in einem Plan, auch archivierte Pläne zählen.</td></tr>
   <tr><td>Kein Vorschlag angezeigt</td><td>Erstes Training der Übung, Übung „ohne Wertung“, oder es gilt „Werte halten“ (Kapitel <a href="#steigerung">8</a>).</td></tr>
-  <tr><td>„… teilen …“ fehlt</td><td>Das Gerät (meist der PC) kann keine Dateien teilen. <span class="k">… als Datei</span> verwenden.</td></tr>
-  <tr><td>CSV-Import: Umlaute falsch</td><td>In Excel als <b>CSV UTF-8</b> speichern, nicht als einfaches „CSV“.</td></tr>
-  <tr><td>Versehentlich gelöscht</td><td>Sofort <span class="k">Rückgängig</span> in der Meldung unten tippen (7 Sekunden). Danach hilft nur das Holen bzw. der Import eines älteren Stands von einem anderen Gerät.</td></tr>
+  <tr><td>„Sicherung teilen …“ fehlt</td><td>Das Gerät (meist der PC) kann keine Dateien teilen. <span class="k">Sicherung als Datei</span> verwenden.</td></tr>
+  <tr><td>Versehentlich gelöscht</td><td>Sofort <span class="k">Rückgängig</span> in der Meldung unten tippen (7 Sekunden). Danach hilft nur das Holen eines älteren Stands von einem anderen Gerät, notfalls eine Sicherungsdatei.</td></tr>
   <tr><td>App zeigt alte Version</td><td>App schließen und neu öffnen. Bei „Neue Version verfügbar“ <span class="k">Neu laden</span> tippen.</td></tr>
-  <tr><td>Neues App-Symbol erscheint nicht</td><td>Das Symbol auf dem Startbildschirm aktualisiert sich manchmal erst spät. Vorher unbedingt <b>senden</b> oder eine vollständige Sicherung machen, denn je nach Gerät (vor allem beim iPhone) gehen beim Entfernen die Daten verloren. Dann die App vom Startbildschirm entfernen, wie in Kapitel <a href="#install">2</a> neu hinzufügen und die Daten wieder holen bzw. importieren.</td></tr>
+  <tr><td>Neues App-Symbol erscheint nicht</td><td>Das Symbol auf dem Startbildschirm aktualisiert sich manchmal erst spät. Vorher unbedingt <b>senden</b>, denn je nach Gerät (vor allem beim iPhone) gehen beim Entfernen die Daten verloren. Dann die App vom Startbildschirm entfernen, wie in Kapitel <a href="#install">2</a> neu hinzufügen und die Daten wieder holen.</td></tr>
 </table>
 
-<p style="margin-top:36px;color:var(--muted);font-size:0.85rem">AO fitlog 1.1 · Stand Oktober 2026 · Diese Anleitung ist in der App jederzeit über das <b>?</b> oben rechts erreichbar.</p>
+<p style="margin-top:36px;color:var(--muted);font-size:0.85rem">AO fitlog 1.2 · Stand November 2026 · Diese Anleitung ist in der App jederzeit über das <b>?</b> oben rechts erreichbar.</p>
 </div>
 <a class="back" href="./">‹ Zur App</a>
 </body>
