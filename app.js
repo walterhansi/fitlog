@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -1222,7 +1222,8 @@ const CHANGES = {
   'xd-check': (el) => { ui.draft[el.dataset.f] = el.checked; },
   'xd-img': (el) => { const f = el.files && el.files[0]; if (f) takeDraftImage(f); },
   device: (el) => { db.device = el.value.trim(); save(); },
-  'import-file': (el) => { const f = el.files && el.files[0]; el.value = ''; if (f) readImport(f); }
+  'import-file': (el) => { const f = el.files && el.files[0]; el.value = ''; if (f) readImport(f); },
+  'obs-dir': (el) => { const files = [...(el.files || [])]; el.value = ''; if (files.length) obsRun(obsTreeFromFiles(files)); }
 };
 
 const INPUTS = {
@@ -1655,7 +1656,21 @@ async function syncSaveSetup() {
 // Im Obsidian-Ordner wird nur gelesen. Beim Holen wird nie etwas gelöscht; Workouts, Verlauf und Pläne bleiben unberührt.
 const OBS_TYPE = { gewicht: 'weight', koerpergewicht: 'bodyweight', zeit: 'time' };
 const STORAGE_LIMIT = 4900000; // Zeichen; Chrome erlaubt je Website ca. 5 Mio.
-function isPC() { return typeof window.showDirectoryPicker === 'function' && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function isPC() { return !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
+// Brave (und andere) schalten showDirectoryPicker ab. Dann wird der Ordner über ein Dateifeld gewählt
+// und hier zu einer Ordnerstruktur mit derselben Bedienung (entries, getFile) zusammengesetzt.
+function obsTreeFromFiles(files) {
+  const mk = (name) => ({ kind: 'directory', name, kids: new Map(), async *entries() { yield* this.kids; } });
+  const root = mk('');
+  for (const f of files) {
+    const parts = nfc(f.webkitRelativePath || f.name).split('/').slice(1); // erster Teil = gewählter Ordner
+    if (!parts.length || parts.some((p) => p.startsWith('.'))) continue;
+    let d = root;
+    for (let i = 0; i < parts.length - 1; i++) { if (!d.kids.has(parts[i])) d.kids.set(parts[i], mk(parts[i])); d = d.kids.get(parts[i]); }
+    d.kids.set(parts[parts.length - 1], { kind: 'file', name: parts[parts.length - 1], getFile: async () => f });
+  }
+  return root;
+}
 
 function obsScalar(v) {
   v = String(v).trim();
@@ -1776,13 +1791,24 @@ async function obsFile(root, path) {
 function obsBusy(text) { openModal(`${modalHead('Übungen aus Obsidian holen')}<p class="muted">${esc(text)}</p>`); }
 
 async function obsStart() {
-  if (!isPC()) { toast('Das geht nur am PC (Chrome oder Edge).', { error: true }); return; }
+  if (!isPC()) { toast('Das geht nur am PC.', { error: true }); return; }
   if (db.active) { toast('Bitte zuerst das laufende Workout abschließen oder abbrechen.', { error: true }); return; }
+  if (typeof window.showDirectoryPicker !== 'function') { obsPickByInput(); return; }
   let root;
   try { root = await window.showDirectoryPicker({ id: 'aofl-obsidian', mode: 'read' }); } catch (e) {
     if (e && e.name !== 'AbortError') toast('Ordner konnte nicht geöffnet werden.', { error: true });
     return;
   }
+  obsRun(root);
+}
+function obsPickByInput() {
+  openModal(`${modalHead('Obsidian-Ordner wählen')}
+    <p class="small">Im nächsten Fenster den Ordner <b>master exercise db obsidian</b> anklicken und <b>Hochladen</b> bzw. <b>Ordner auswählen</b> drücken.</p>
+    <div class="callout info">Der Browser fragt danach, ob er die Dateien „hochladen“ soll. Das ist nur der übliche Wortlaut: Die Dateien bleiben auf deinem PC, fitlog liest sie nur. In Obsidian wird nichts geändert.</div>
+    <div class="modal-foot"><button class="btn ghost" data-a="modal-close">Abbrechen</button>
+      <label class="btn">${ic('download')}Ordner wählen<input type="file" webkitdirectory multiple hidden data-c="obs-dir"></label></div>`, { dismiss: true });
+}
+async function obsRun(root) {
   // Erst den neuesten Stand der anderen Geräte haben, sonst würde eine alte Fassung hier die neuere dort überschreiben.
   if (syncReady()) {
     obsBusy('Prüfe, ob ein anderes Gerät neue Daten gesendet hat …');
