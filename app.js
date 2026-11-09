@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.2.2';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -1761,20 +1761,27 @@ function obsUrl(fm, secs) {
   return '';
 }
 function obsImgRef(secs, body) {
+  // Erstes echtes Bild (jpg, png …); eingebettete PDF-Seiten (Buchseiten) und Internet-Bilder werden übersprungen.
   const find = (text) => {
-    const md = String(text || '').match(/!\[[^\]]*\]\(((?:[^()\s]|\([^()]*\))+)\)/);
-    if (md) {
-      let p = md[1].split('|')[0];
-      if (/^https?:/i.test(p)) return null; // Bilder aus dem Internet werden nicht geladen
+    text = String(text || '');
+    const found = [];
+    for (const m of text.matchAll(/!\[[^\]]*\]\(((?:[^()\s]|\([^()]*\))+)\)/g)) {
+      let p = m[1].split('|')[0];
+      if (/^https?:/i.test(p)) continue;
       try { p = decodeURIComponent(p); } catch (e) { /* bleibt */ }
-      return p.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '');
+      found.push([m.index, p.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '')]);
     }
-    const wl = String(text || '').match(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/);
-    if (wl) return wl[1].includes('/') ? wl[1] : 'Medien/' + wl[1];
-    return null;
+    for (const m of text.matchAll(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g)) {
+      const p = m[1].split('#')[0];
+      found.push([m.index, p.includes('/') ? p : 'Medien/' + p]);
+    }
+    found.sort((x, y) => x[0] - y[0]);
+    const hit = found.find(([, p]) => OBS_IMG_RE.test(p));
+    return hit ? hit[1] : null;
   };
   return find(obsSec(secs, /^Bilder/i)) || find(body);
 }
+const OBS_IMG_RE = /\.(jpe?g|png|gif|webp|avif|bmp)$/i;
 const nfc = (s) => String(s).normalize('NFC');
 async function obsChild(dir, name, kind) {
   for await (const [n, h] of dir.entries()) if (h.kind === kind && nfc(n) === nfc(name)) return h;
