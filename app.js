@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.4';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
