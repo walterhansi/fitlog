@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.2.4';
+const APP_VERSION = '1.2.5';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -1862,7 +1862,8 @@ async function obsPlan(root, dir) {
     const fid = fm.fitlog_id == null ? '' : String(fm.fitlog_id).trim();
     const tick = fm.fitlog_auswahl === true;
     let ex = (obsId && byObs.get(obsId)) || (fid && byId.get(fid)) || null;
-    if (!ex && !tick && !fid) continue;
+    // Neu hinzu kommt nur, was in Obsidian angehakt ist. Ohne Haken bleibt eine vorhandene Übung in fitlog, eine fehlende wird übergangen.
+    if (!ex && !tick) continue;
     const label = `${fm.name || fname.replace(/\.md$/i, '')}${obsId ? ' (' + obsId + ')' : ''}`;
     if (!obsId) { P.skip.push(`${label}: keine id in Obsidian`); continue; }
     if (!ex && fid) {
