@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.3.1';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -153,20 +153,39 @@ function storageUsedKB() {
   return Math.round(n / 1024);
 }
 
+// Bereich eines Bildes, in dem wirklich etwas zu sehen ist (leerer weißer Rand wird ignoriert).
+function contentBox(img) {
+  const A = 400, s = Math.min(1, A / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * s)), h = Math.max(1, Math.round(img.height * s));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true }); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h).data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4;
+    if (d[i] < 232 || d[i + 1] < 232 || d[i + 2] < 232) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return { x: 0, y: 0, w: img.width, h: img.height };
+  const m = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04) + 2;
+  x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(w - 1, x1 + m); y1 = Math.min(h - 1, y1 + m);
+  return { x: x0 / s, y: y0 / s, w: (x1 - x0 + 1) / s, h: (y1 - y0 + 1) / s };
+}
 // Bilder verkleinern (längste Seite max. 900 px, JPEG), damit der Speicher reicht.
-function downscale(blob, max = 900) {
+// trim: leeren weißen Rand vorher abschneiden (für Bilder aus Obsidian).
+function downscale(blob, max = 900, trim = false) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
     const img = new Image();
     img.onload = () => {
-      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const b = trim ? contentBox(img) : { x: 0, y: 0, w: img.width, h: img.height };
+      const s = Math.min(1, max / Math.max(b.w, b.h));
       const c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(img.width * s));
-      c.height = Math.max(1, Math.round(img.height * s));
+      c.width = Math.max(1, Math.round(b.w * s));
+      c.height = Math.max(1, Math.round(b.h * s));
       const ctx = c.getContext('2d');
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0, c.width, c.height);
+      ctx.drawImage(img, b.x, b.y, b.w, b.h, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
       resolve(c.toDataURL('image/jpeg', 0.82));
     };
@@ -1939,8 +1958,9 @@ async function obsPlan(root, dir) {
     let file = null;
     if (ref) { try { file = await obsFile(root, ref); } catch (e) { file = null; } }
     if (ref && !file) P.warn.push(`${label}: Bild „${ref}“ nicht gefunden`);
-    const sig = file ? `${ref}|${file.size}|${file.lastModified}` : '';
-    const loadImg = async () => { try { return await downscale(file); } catch (e) { P.warn.push(`${label}: Bild nicht lesbar`); return null; } };
+    // „|t1“: Bild ohne weißen Rand. Ältere Fassungen werden beim nächsten Holen einmal neu erzeugt.
+    const sig = file ? `${ref}|${file.size}|${file.lastModified}|t1` : '';
+    const loadImg = async () => { try { return await downscale(file, 900, true); } catch (e) { P.warn.push(`${label}: Bild nicht lesbar`); return null; } };
 
     if (!ex) {
       // Neu in fitlog
