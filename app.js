@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -1724,7 +1724,7 @@ async function syncSaveSetup() {
 // fitlog behält Trainingswerte (Wdh-Bereich, Steigerung, je Seite, Score) und den Kommentar.
 // Im Obsidian-Ordner wird nur gelesen. Beim Holen wird nie etwas gelöscht; Workouts, Verlauf und Pläne bleiben unberührt.
 const OBS_TYPE = { gewicht: 'weight', koerpergewicht: 'bodyweight', zeit: 'time' };
-// Häkchen „Übungsauswahl“ (gilt für fitlog und Basement Box). Die alte Schreibweise „fitlog_auswahl“ zählt weiter.
+// Häkchen „Übungsauswahl“ (gilt für fitlog und basementBOX). Die alte Schreibweise „fitlog_auswahl“ zählt weiter.
 const OBS_TICK_KEYS = ['uebungsauswahl', 'ubungsauswahl', 'fitlogauswahl'];
 function obsTick(fm) { return Object.keys(fm).some((k) => OBS_TICK_KEYS.includes(norm(k)) && fm[k] === true); }
 const STORAGE_LIMIT = 4900000; // Zeichen; Chrome erlaubt je Website ca. 5 Mio.

@@ -1,6 +1,6 @@
 // AO fitlog – Service Worker
 // Bei jeder neuen Version VERSION erhöhen, damit Geräte das Update erkennen.
-const VERSION = '1.3.1';
+const VERSION = '1.3.2';
 const CACHE = 'aofl-' + VERSION;
 const ASSETS = [
   './',
