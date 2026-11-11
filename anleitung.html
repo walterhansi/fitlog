@@ -178,7 +178,7 @@
 <h3>4.1 Übung für fitlog auswählen (Obsidian)</h3>
 <ol class="steps">
   <li>In Obsidian die Übung öffnen oder mit der Vorlage „Übung“ neu anlegen.</li>
-  <li>Das Häkchen <b>fitlog-Auswahl</b> setzen. Die Ansicht „fitlog-Auswahl“ in der Übungsdatenbank zeigt alle so markierten Übungen. Nur Übungen mit diesem Häkchen kommen neu in fitlog.</li>
+  <li>Das Häkchen <b>Übungsauswahl</b> setzen (es gilt für fitlog und Basement Box). Nur Übungen mit diesem Häkchen kommen neu in fitlog. Jede Übung erkennt fitlog an ihrer <b>ID</b> aus Obsidian (z. B. 1656).</li>
   <li>Die <b>Messart</b> eintragen: <code>Gewicht</code>, <code>Körpergewicht</code> oder <code>Zeit</code>. Ohne Messart wird die Übung nicht übernommen.</li>
   <li>Freiwillig: <code>je_seite</code>, <code>fitlog_wdh_min</code>, <code>fitlog_wdh_max</code>, <code>fitlog_schritt</code> und <code>fitlog_score</code> als Startwerte. Fehlen sie, nimmt fitlog 8 bis 12 Wdh und den Standardschritt.</li>
 </ol>
@@ -195,7 +195,7 @@
   <tr><td>Messart (Typ)</td><td><b>Obsidian beim ersten Holen.</b> Später ändert fitlog den Typ nur, solange die Übung noch nie trainiert wurde. Sonst gibt die Vorschau einen Hinweis.</td></tr>
   <tr><td>Wdh-Bereich, Steigerung, Je Seite, Zählt zum Score, Kommentar</td><td><b>fitlog.</b> Obsidian liefert nur Startwerte für neue Übungen.</td></tr>
 </table>
-<div class="box"><b>Was beim Holen nie passiert</b>Es wird nichts gelöscht. Workouts, Verlauf und Pläne bleiben unverändert. Jede Übung behält ihre Kennung, ihr Verlauf bleibt also erhalten, auch wenn sich der Name ändert. „Aus Obsidian holen“ fügt nur neue Übungen hinzu. Übungen, die schon in fitlog sind, bleiben dort, auch wenn sie in Obsidian kein Häkchen „fitlog-Auswahl“ (mehr) haben.</div>
+<div class="box"><b>Was beim Holen nie passiert</b>Es wird nichts gelöscht. Workouts, Verlauf und Pläne bleiben unverändert. Jede Übung behält ihre Kennung, ihr Verlauf bleibt also erhalten, auch wenn sich der Name ändert. „Aus Obsidian holen“ fügt nur neue Übungen hinzu. Übungen, die schon in fitlog sind, bleiben dort, auch wenn sie in Obsidian kein Häkchen „Übungsauswahl“ (mehr) haben.</div>
 <div class="box warn"><b>Speicher</b>Die App hat auf jedem Gerät nur rund 5 MB Speicher, und Bilder brauchen davon am meisten. Bilder werden beim Holen automatisch verkleinert. Reicht der Platz nicht, sagt es die Vorschau, und es wird nichts geändert. Die Belegung steht unter <span class="k">Daten</span> › Speicher.</div>
 
 <!-- ============================================================ -->
@@ -212,13 +212,13 @@
   <tr><td>Zählt zum Score</td><td>Für Mobilisation und Technikübungen abhaken. Dann gibt es auch keinen Steigerungsvorschlag.</td></tr>
   <tr><td>Kommentar / Einstellung</td><td>Im Training <b>immer sichtbar</b>, z. B. „Sitzhöhe 3“.</td></tr>
 </table>
-<p><b>Löschen:</b> Papierkorb im Bearbeiten-Fenster. Das geht nur, wenn die Übung in keinem Plan steht. Gelöscht wird nur in fitlog, in Obsidian bleibt die Übung. Damit sie nicht wiederkommt, in Obsidian das Häkchen „fitlog-Auswahl“ entfernen. Nach dem Löschen erscheint einige Sekunden lang <span class="k">Rückgängig</span>.</p>
+<p><b>Löschen:</b> Papierkorb im Bearbeiten-Fenster. Das geht nur, wenn die Übung in keinem Plan steht. Gelöscht wird nur in fitlog, in Obsidian bleibt die Übung. Damit sie nicht wiederkommt, in Obsidian das Häkchen „Übungsauswahl“ entfernen. Nach dem Löschen erscheint einige Sekunden lang <span class="k">Rückgängig</span>.</p>
 
 <!-- ============================================================ -->
 <h2 id="plaene"><span class="n">6</span>Pläne anlegen (PC)</h2>
 <ol class="steps">
   <li><span class="k">Pläne</span> › <span class="k">+ Neuer Plan</span> › Name eingeben.</li>
-  <li>Über <span class="k">+ Übung hinzufügen …</span> Übungen auswählen.</li>
+  <li>Unter <span class="k">Übung hinzufügen (ID)</span> die ID der Übung eintippen (z. B. 1656) und Enter drücken. Darunter siehst du sofort, welche Übung das ist.</li>
   <li>Je Übung <b>Sätze</b>, <b>Wdh/Sekunden</b> und bei Gewichtsübungen <b>kg</b> eintragen.</li>
   <li>Reihenfolge mit den Pfeilen oder per Ziehen am Griff <span class="k">⠿</span> ändern › <span class="k">Speichern</span>.</li>
 </ol>
@@ -258,7 +258,7 @@
   <tr><td>Wie war's?</td><td><b>leicht · passt · schwer</b> (optional). „Schwer“ verhindert beim nächsten Mal einen Steigerungsvorschlag.</td></tr>
   <tr><td>Notiz fürs nächste Mal</td><td>Erscheint beim nächsten Training dieser Übung, z. B. „Gerät belegt“.</td></tr>
   <tr><td><span class="k">Überspringen</span></td><td>Übung heute auslassen. Sie wird nicht als Rückschritt gewertet.</td></tr>
-  <tr><td><span class="k">+ Übung hinzufügen</span></td><td>Weitere Übung für heute aus der Liste ergänzen.</td></tr>
+  <tr><td><span class="k">+ Übung hinzufügen</span></td><td>Weitere Übung für heute ergänzen. Im Suchfeld kannst du die ID oder den Namen eingeben.</td></tr>
 </table>
 <p><b>Fokus:</b> Aufgeklappt ist nur die aktuelle Übung. Ist sie vollständig abgehakt, klappt sie zu und die nächste öffnet sich. Jede Übung lässt sich per Tipp auf den Titel auf- und zuklappen.</p>
 <h3>7.3 Beenden</h3>

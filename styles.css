@@ -241,6 +241,8 @@ details.more .more-body { padding: 0 12px 12px; font-size: 0.88rem; }
 .pe-top .grow { flex: 1; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
 .grip { cursor: grab; color: var(--faint); padding: 4px; display: none; }
 .pe-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.pe-idrow { display: flex; gap: 8px; align-items: stretch; }
+.pe-idrow input { flex: 1; min-width: 0; font-size: 1.1rem; }
 .pe-fields label { font-size: 0.7rem; color: var(--muted); font-weight: 700; display: block; margin-bottom: 4px; }
 .pe-fields input { min-height: 40px; padding: 6px 10px; }
 

@@ -6,7 +6,7 @@
 'use strict';
 
 /* ================= 1 Grundlagen ================= */
-const APP_VERSION = '1.2.5';
+const APP_VERSION = '1.3.0';
 const KEY = 'aofl_data';
 const IMG = 'aofl_img_';
 const TYPE_LABEL = { weight: 'Gewicht', bodyweight: 'Körpergewicht', time: 'Zeit' };
@@ -82,8 +82,28 @@ function textBlock(s) {
 function safeUrl(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
 function byName(a, b) { return a.name.localeCompare(b.name, 'de', { sensitivity: 'base' }); }
 function norm(s) {
-  return String(s || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]/g, '');
+  return String(s || '').normalize('NFC').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').replace(/[^a-z0-9]/g, '');
 }
+
+// Übungs-ID aus Obsidian vereinheitlichen: „UE-0002“, „UE-1656“, „0002“ → „2“, „1656“.
+// So passen alte und neue Schreibweise zusammen; die interne Kennung (und damit der Verlauf) bleibt unberührt.
+function obsNorm(v) {
+  let s = String(v ?? '').trim().replace(/^UE[\s_-]*/i, '');
+  if (/^\d+$/.test(s)) s = String(parseInt(s, 10));
+  return s;
+}
+function obsIdNormAll(list) {
+  let n = 0;
+  for (const x of list || []) if (x && x.obsId) { const v = obsNorm(x.obsId); if (v !== x.obsId) { x.obsId = v; n++; } }
+  return n;
+}
+// Zahlen-IDs der Reihe nach, Übungen ohne ID danach nach Name.
+function byObsId(a, b) {
+  const x = a.obsId && /^\d+$/.test(a.obsId) ? +a.obsId : Infinity, y = b.obsId && /^\d+$/.test(b.obsId) ? +b.obsId : Infinity;
+  return x !== y ? (x < y ? -1 : 1) : byName(a, b);
+}
+function idBadge(ex) { return ex.obsId ? `<span class="badge lime">ID ${esc(ex.obsId)}</span>` : ''; }
+function exByObsId(v) { const id = obsNorm(v); return id ? db.exercises.find((e) => e.obsId === id) : null; }
 
 /* ================= 2 Speicher ================= */
 function freshDb() {
@@ -95,7 +115,9 @@ function loadDb() {
     if (!raw) return freshDb();
     const d = JSON.parse(raw);
     const f = freshDb();
-    return Object.assign(f, d, { meta: Object.assign(f.meta, d.meta || {}), deleted: d.deleted || {} });
+    const out = Object.assign(f, d, { meta: Object.assign(f.meta, d.meta || {}), deleted: d.deleted || {} });
+    obsIdNormAll(out.exercises);
+    return out;
   } catch (e) {
     return freshDb();
   }
@@ -602,21 +624,22 @@ function viewHistory() {
 function viewExercises() {
   return `<div class="view-inner"><div class="page-head"><h1>Übungen</h1>${isPC() ? `<div class="btn-row">
     <button class="btn" data-a="obs-open">${ic('download')}Aus Obsidian holen</button></div>` : ''}</div>
-    ${isPC() ? '<p class="hint" style="margin:-6px 0 12px">Neue Übungen legst du in Obsidian an: Häkchen „fitlog-Auswahl“ setzen, dann hier „Aus Obsidian holen“ und unter „Daten“ „Senden“.</p>'
+    ${isPC() ? '<p class="hint" style="margin:-6px 0 12px">Neue Übungen legst du in Obsidian an: Häkchen „Übungsauswahl“ setzen, dann hier „Aus Obsidian holen“ und unter „Daten“ „Senden“.</p>'
       : '<div class="callout info" style="margin:0 0 12px">Neue Übungen kommen aus Obsidian am PC. Dort „Aus Obsidian holen“ und „Senden“, dann hier unter „Daten“ „Holen“.</div>'}
-    <div class="search">${ic('search')}<input type="search" placeholder="Übung suchen" value="${esc(ui.exQuery)}" data-in="ex-q" aria-label="Übung suchen"></div>
+    <div class="search">${ic('search')}<input type="search" placeholder="ID oder Name suchen" value="${esc(ui.exQuery)}" data-in="ex-q" aria-label="Übung suchen"></div>
     <div id="ex-list">${exerciseList()}</div></div>`;
 }
 function exerciseList() {
   const q = ui.exQuery.trim().toLowerCase();
-  const list = db.exercises.filter((e) => !q || e.name.toLowerCase().includes(q)).sort(byName);
+  const qi = obsNorm(q);
+  const list = db.exercises.filter((e) => !q || e.name.toLowerCase().includes(q) || (qi && e.obsId === qi)).sort(byObsId);
   if (!db.exercises.length) return '<div class="empty">Noch keine Übungen. Am PC: „Aus Obsidian holen“. Am Handy: unter „Daten“ „Holen“.</div>';
   if (!list.length) return '<div class="empty">Keine Übung gefunden.</div>';
   return `<div class="grid cols">${list.map((ex) => {
     const last = lastEntry(ex.id);
     return `<button class="card" style="display:block;width:100%;text-align:left" data-a="ex-edit" data-id="${ex.id}"><div class="card-row">${thumb(ex)}<div class="grow">
       <div class="card-title">${esc(ex.name)}</div>
-      <div class="badges"><span class="badge">${TYPE_LABEL[ex.type]}</span>${ex.obsId ? `<span class="badge lime">${esc(ex.obsId)}</span>` : ''}${ex.perSide ? '<span class="badge">je Seite</span>' : ''}${ex.scored === false ? '<span class="badge">ohne Wertung</span>' : ''}${exUsed(ex.id) ? `<span class="badge">${ic('lock')}Typ fest</span>` : ''}</div>
+      <div class="badges">${idBadge(ex)}<span class="badge">${TYPE_LABEL[ex.type]}</span>${ex.perSide ? '<span class="badge">je Seite</span>' : ''}${ex.scored === false ? '<span class="badge">ohne Wertung</span>' : ''}${exUsed(ex.id) ? `<span class="badge">${ic('lock')}Typ fest</span>` : ''}</div>
       <div class="card-sub">${last ? 'zuletzt ' + esc(setsText(ex.type, last.entry.sets)) : 'noch nicht trainiert'}</div></div></div></button>`;
   }).join('')}</div>`;
 }
@@ -701,7 +724,7 @@ function planEditorHtml() {
     const type = ex ? ex.type : 'bodyweight';
     return `<div class="pe-item" data-pe="${idx}">
       <div class="pe-top"><span class="grip" data-grip="${idx}" title="Ziehen zum Verschieben">${ic('grip')}</span>
-        <div class="grow">${esc(ex ? ex.name : '(Übung gelöscht)')} <span class="badge">${TYPE_LABEL[type]}</span></div>
+        <div class="grow">${ex ? idBadge(ex) + ' ' : ''}${esc(ex ? ex.name : '(Übung gelöscht)')} <span class="badge">${TYPE_LABEL[type]}</span></div>
         <button class="icon-btn" data-a="pe-move" data-i="${idx}" data-d="-1" aria-label="Nach oben" ${idx === 0 ? 'disabled' : ''}>${ic('up')}</button>
         <button class="icon-btn" data-a="pe-move" data-i="${idx}" data-d="1" aria-label="Nach unten" ${idx === d.items.length - 1 ? 'disabled' : ''}>${ic('down')}</button>
         ${d.locked ? '' : `<button class="icon-btn" data-a="pe-del" data-i="${idx}" aria-label="Entfernen">${ic('trash')}</button>`}</div>
@@ -712,7 +735,10 @@ function planEditorHtml() {
       </div></div>`;
   }).join('');
   if (!d.locked) {
-    h += `<div class="field" style="margin-top:10px"><select data-c="pe-add" aria-label="Übung hinzufügen"><option value="">+ Übung hinzufügen …</option>${exs.map((e) => `<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select>
+    h += `<div class="field" style="margin-top:10px"><label for="peId">Übung hinzufügen (ID)</label>
+      <div class="pe-idrow"><input type="text" id="peId" inputmode="numeric" placeholder="z. B. 1656" autocomplete="off" data-in="pe-id" data-k="pe-id-add" aria-label="Übungs-ID">
+      <button class="btn" data-a="pe-add-id">${ic('plus')}Hinzufügen</button></div>
+      <p class="hint" id="peIdHint">ID eingeben und Enter drücken.</p>
       <p class="hint">Zielwerte gelten nur beim allerersten Training einer Übung. Danach übernimmt die App die Werte vom letzten Mal.</p></div>`;
   }
   h += `<div class="modal-foot"><button class="btn ghost" data-a="modal-close">Abbrechen</button><button class="btn" data-a="plan-save">Speichern</button></div>`;
@@ -819,9 +845,10 @@ function freeStartHtml(retro) {
 
 function addExHtml(q = '') {
   const s = q.trim().toLowerCase();
-  const list = db.exercises.filter((e) => !s || e.name.toLowerCase().includes(s)).sort(byName);
-  return `${modalHead('Übung hinzufügen')}<div class="search">${ic('search')}<input type="search" id="addq" placeholder="Suchen" value="${esc(q)}" data-in="add-q"></div>
-    <div id="add-list">${list.map((e) => `<button class="card tight" style="display:block;width:100%;text-align:left" data-a="add-ex" data-id="${e.id}"><div class="card-row">${thumb(e)}<div class="grow"><div class="card-title">${esc(e.name)}</div><div class="card-sub">${TYPE_LABEL[e.type]}</div></div></div></button>`).join('') || '<div class="empty">Keine Übung gefunden.</div>'}</div>`;
+  const si = obsNorm(s);
+  const list = db.exercises.filter((e) => !s || e.name.toLowerCase().includes(s) || (si && e.obsId === si)).sort(byObsId);
+  return `${modalHead('Übung hinzufügen')}<div class="search">${ic('search')}<input type="search" id="addq" placeholder="ID oder Name" value="${esc(q)}" data-in="add-q"></div>
+    <div id="add-list">${list.map((e) => `<button class="card tight" style="display:block;width:100%;text-align:left" data-a="add-ex" data-id="${e.id}"><div class="card-row">${thumb(e)}<div class="grow"><div class="card-title">${esc(e.name)}</div><div class="card-sub">${e.obsId ? 'ID ' + esc(e.obsId) + ' · ' : ''}${TYPE_LABEL[e.type]}</div></div></div></button>`).join('') || '<div class="empty">Keine Übung gefunden.</div>'}</div>`;
 }
 
 /* ================= 7 Aktionen ================= */
@@ -895,7 +922,23 @@ function finishWorkout() {
   showWorkout(w.id, true);
 }
 
+// Übung per ID in den Plan übernehmen
+function peAddEx(ex) {
+  ui.draft.items.push({ exId: ex.id, sets: 3, r: ex.type === 'time' ? 30 : ex.type === 'weight' ? (ex.repMin || 8) : 10, w: 0 });
+  refreshPlanEditor();
+  const inp = $('#peId');
+  if (inp) inp.focus();
+}
 const ACTIONS = {
+  'pe-add-id': () => {
+    const inp = $('#peId');
+    if (!inp || !ui.draft || ui.draft.kind !== 'plan') return;
+    const v = inp.value.trim();
+    if (!v) { inp.focus(); return; }
+    const ex = exByObsId(v);
+    if (!ex) { toast(`Keine Übung mit ID ${obsNorm(v)} in fitlog.`, { error: true }); inp.select(); return; }
+    peAddEx(ex);
+  },
   tab: (el) => {
     ui.tab = el.dataset.tab;
     render();
@@ -1153,7 +1196,7 @@ const ACTIONS = {
     }
     if (db.active && db.active.entries.some((e) => e.exId === id)) { toast('Übung ist im laufenden Workout.', { error: true }); return; }
     const exd = exById(id);
-    if (exd && exd.obsId && !confirm(`„${exd.name}“ nur aus fitlog löschen? In Obsidian bleibt die Übung erhalten.\n\nEntferne dort das Häkchen „fitlog-Auswahl“ (${exd.obsId}), sonst kommt sie beim nächsten „Aus Obsidian holen“ wieder.`)) return;
+    if (exd && exd.obsId && !confirm(`„${exd.name}“ nur aus fitlog löschen? In Obsidian bleibt die Übung erhalten.\n\nEntferne dort das Häkchen „Übungsauswahl“ (ID ${exd.obsId}), sonst kommt sie beim nächsten „Aus Obsidian holen“ wieder.`)) return;
     closeModal();
     withUndo('Übung gelöscht.', () => {
       db.exercises = db.exercises.filter((x) => x.id !== id);
@@ -1210,8 +1253,7 @@ const CHANGES = {
   'pe-add': (el) => {
     const ex = exById(el.value);
     if (!ex) return;
-    ui.draft.items.push({ exId: ex.id, sets: 3, r: ex.type === 'time' ? 30 : ex.type === 'weight' ? (ex.repMin || 8) : 10, w: 0 });
-    refreshPlanEditor();
+    peAddEx(ex);
   },
   'xd-type': (el) => {
     const d = ui.draft;
@@ -1237,6 +1279,13 @@ const INPUTS = {
     if (inp) { inp.focus(); inp.setSelectionRange(pos, pos); }
   },
   'pd-name': (el) => { ui.draft.name = el.value; },
+  'pe-id': (el) => {
+    const hint = $('#peIdHint');
+    if (!hint) return;
+    const v = el.value.trim();
+    const ex = v && exByObsId(v);
+    hint.innerHTML = !v ? 'ID eingeben und Enter drücken.' : ex ? `${ic('check')} <b>${esc(ex.name)}</b> – Enter fügt hinzu.` : `Keine Übung mit ID <b>${esc(obsNorm(v))}</b> in fitlog. Neue Übungen am PC „Aus Obsidian holen“.`;
+  },
   xd: (el) => { ui.draft[el.dataset.f] = el.value; }
 };
 
@@ -1328,6 +1377,7 @@ function mergeInto(target, inc) {
   target.exercises = target.exercises.filter(keep);
   target.plans = target.plans.filter(keep);
   target.workouts = target.workouts.filter((w) => { if (del[w.id]) { rep.removed++; return false; } return true; });
+  obsIdNormAll(target.exercises);
   return rep;
 }
 function emptyInc() { return { app: 'ao-fitlog', exercises: [], plans: [], workouts: [], deleted: {}, images: {} }; }
@@ -1655,6 +1705,9 @@ async function syncSaveSetup() {
 // fitlog behält Trainingswerte (Wdh-Bereich, Steigerung, je Seite, Score) und den Kommentar.
 // Im Obsidian-Ordner wird nur gelesen. Beim Holen wird nie etwas gelöscht; Workouts, Verlauf und Pläne bleiben unberührt.
 const OBS_TYPE = { gewicht: 'weight', koerpergewicht: 'bodyweight', zeit: 'time' };
+// Häkchen „Übungsauswahl“ (gilt für fitlog und Basement Box). Die alte Schreibweise „fitlog_auswahl“ zählt weiter.
+const OBS_TICK_KEYS = ['uebungsauswahl', 'ubungsauswahl', 'fitlogauswahl'];
+function obsTick(fm) { return Object.keys(fm).some((k) => OBS_TICK_KEYS.includes(norm(k)) && fm[k] === true); }
 const STORAGE_LIMIT = 4900000; // Zeichen; Chrome erlaubt je Website ca. 5 Mio.
 function isPC() { return !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent); }
 // Brave (und andere) schalten showDirectoryPicker ab. Dann wird der Ordner über ein Dateifeld gewählt
@@ -1847,7 +1900,7 @@ async function obsRun(root) {
 
 async function obsPlan(root, dir) {
   const byId = new Map(db.exercises.map((e) => [e.id, e]));
-  const byObs = new Map(db.exercises.filter((e) => e.obsId).map((e) => [e.obsId, e]));
+  const byObs = new Map(db.exercises.filter((e) => e.obsId).map((e) => [obsNorm(e.obsId), e]));
   const claimed = new Set();
   const names = new Map(db.exercises.map((e) => [e.name.trim().toLowerCase(), e.id]));
   const P = { add: [], upd: [], warn: [], skip: [], keepNoTick: 0, read: 0, imgDelta: 0 };
@@ -1858,19 +1911,19 @@ async function obsPlan(root, dir) {
     const text = await (await h.getFile()).text();
     P.read++;
     const [fm, body] = obsParse(text);
-    const obsId = String(fm.id || '').trim();
+    const obsId = obsNorm(fm.id);
     const fid = fm.fitlog_id == null ? '' : String(fm.fitlog_id).trim();
-    const tick = fm.fitlog_auswahl === true;
+    const tick = obsTick(fm);
     let ex = (obsId && byObs.get(obsId)) || (fid && byId.get(fid)) || null;
     // Neu hinzu kommt nur, was in Obsidian angehakt ist. Ohne Haken bleibt eine vorhandene Übung in fitlog, eine fehlende wird übergangen.
     if (!ex && !tick) continue;
-    const label = `${fm.name || fname.replace(/\.md$/i, '')}${obsId ? ' (' + obsId + ')' : ''}`;
+    const label = `${fm.name || fname.replace(/\.md$/i, '')}${obsId ? ' (ID ' + obsId + ')' : ''}`;
     if (!obsId) { P.skip.push(`${label}: keine id in Obsidian`); continue; }
     if (!ex && fid) {
-      P.skip.push(db.deleted[fid] ? `${label}: in fitlog gelöscht – in Obsidian das Häkchen „fitlog-Auswahl“ entfernen` : `${label}: diese Übung fehlt auf diesem Gerät – erst „Holen“`);
+      P.skip.push(db.deleted[fid] ? `${label}: in fitlog gelöscht – in Obsidian das Häkchen „Übungsauswahl“ entfernen` : `${label}: diese Übung fehlt auf diesem Gerät – erst „Holen“`);
       continue;
     }
-    if (ex && ex.obsId && ex.obsId !== obsId) { P.warn.push(`${label}: fitlog-Übung ist schon mit ${ex.obsId} verbunden – übersprungen`); continue; }
+    if (ex && ex.obsId && obsNorm(ex.obsId) !== obsId) { P.warn.push(`${label}: fitlog-Übung ist schon mit ID ${ex.obsId} verbunden – übersprungen`); continue; }
     if (ex && claimed.has(ex.id)) { P.warn.push(`${label}: zweite Notiz für dieselbe fitlog-Übung – übersprungen`); continue; }
     if (ex && !tick) P.keepNoTick++;
     const secs = obsSections(body);
@@ -1938,11 +1991,11 @@ function obsPreviewHtml() {
   const nothing = !P.add.length && !P.upd.length;
   let h = modalHead('Übungen aus Obsidian – Vorschau');
   h += `<p class="small muted" style="margin-top:0">${P.read} Notizen gelesen. In Obsidian wird nichts geändert.</p>`;
-  if (P.add.length) h += `<div class="section-title">Neu in fitlog (${P.add.length})</div>${list(P.add.map((a) => `<b>${esc(a.name)}</b> <span class="faint">(${esc(a.obsId)}, ${TYPE_LABEL[a.type]}${a.img ? ', mit Bild' : ''})</span>`))}`;
+  if (P.add.length) h += `<div class="section-title">Neu in fitlog (${P.add.length})</div>${list(P.add.map((a) => `<b>${esc(a.name)}</b> <span class="faint">(ID ${esc(a.obsId)}, ${TYPE_LABEL[a.type]}${a.img ? ', mit Bild' : ''})</span>`))}`;
   if (P.upd.length) h += `<div class="section-title">Aktualisiert (${P.upd.length})</div>${list(P.upd.map((u) => `${esc(u.label)}: <span class="faint">${esc(shown(u))}</span>`))}`;
   if (P.warn.length) h += `<div class="section-title">Hinweise (${P.warn.length})</div>${list(P.warn.map(esc))}`;
   if (P.skip.length) h += `<div class="section-title">Nicht übernommen (${P.skip.length})</div>${list(P.skip.map(esc))}`;
-  if (P.keepNoTick) h += `<p class="hint">${P.keepNoTick} Übung(en) sind in Obsidian ohne Häkchen „fitlog-Auswahl“, aber mit fitlog verbunden. Sie bleiben in fitlog und werden weiter aktualisiert.</p>`;
+  if (P.keepNoTick) h += `<p class="hint">${P.keepNoTick} Übung(en) sind in Obsidian ohne Häkchen „Übungsauswahl“, aber mit fitlog verbunden. Sie bleiben in fitlog und werden weiter aktualisiert.</p>`;
   if (nothing) h += '<div class="callout tip">Nichts Neues – fitlog ist auf dem Stand von Obsidian.</div>';
   else if (P.tooBig) h += '<div class="callout warn">Dafür reicht der Speicher in diesem Browser nicht. Bitte weniger Übungen auswählen oder kleinere Bilder verwenden.</div>';
   else h += '<p class="hint">Workouts, Verlauf und Pläne bleiben unverändert. Es wird nichts gelöscht. Trainingswerte und Kommentar bleiben, wie sie in fitlog eingestellt sind.</p>';
@@ -2009,6 +2062,7 @@ document.addEventListener('input', (ev) => {
   if (el && INPUTS[el.dataset.in]) INPUTS[el.dataset.in](el, ev);
 });
 document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Enter' && ev.target && ev.target.id === 'peId') { ev.preventDefault(); ACTIONS['pe-add-id'](); return; }
   if (ev.key !== 'Escape') return;
   const lb = $('.lightbox');
   if (lb) { lb.remove(); return; }
